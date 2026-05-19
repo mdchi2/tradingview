@@ -64,14 +64,25 @@
         /* Contenido Principal */
         main {
             flex: 1;
-            padding: 2rem;
-            max-width: 1600px;
+            padding: 1.5rem;
+            max-width: 1800px;
             width: 100%;
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
-            justify-content: center;
+            align-content: center;
+        }
+
+        @media (max-width: 1100px) {
+            main {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            .chart-panel {
+                height: 500px !important;
+                min-height: auto !important;
+            }
         }
 
         /* Contenedor del Gráfico Completo */
@@ -125,10 +136,10 @@
         /* Selectores de Par de Trading */
         .pair-selector {
             display: flex;
-            gap: 0.35rem;
+            gap: 0.25rem;
             background: rgba(0, 0, 0, 0.3);
-            padding: 4px;
-            border-radius: 8px;
+            padding: 3px;
+            border-radius: 6px;
             border: 1px solid var(--border-color);
         }
 
@@ -136,11 +147,11 @@
             background: transparent;
             border: none;
             color: var(--text-secondary);
-            padding: 6px 12px;
+            padding: 4px 8px;
             font-family: var(--font-body);
-            font-size: 0.8rem;
+            font-size: 0.68rem;
             font-weight: 600;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
             transition: all var(--transition-speed);
         }
@@ -163,6 +174,15 @@
             width: 100%;
             height: 100%;
             background: #131722; /* Color de fondo nativo de TradingView Dark */
+            overflow: hidden;
+        }
+
+        .chart-widget-container iframe {
+            width: 111.11% !important;
+            height: 111.11% !important;
+            transform: scale(0.9);
+            transform-origin: 0 0;
+            border: none;
         }
 
         /* Footer */
@@ -238,24 +258,45 @@
     <!-- Contenido Principal -->
     <main>
         
-        <!-- Panel Único del Gráfico -->
-        <section class="chart-panel" aria-label="Gráfico interactivo de TradingView">
+        <!-- Panel Izquierdo (BTC/USDT) -->
+        <section class="chart-panel" aria-label="Gráfico interactivo de BTC">
             <div class="panel-header">
                 <div class="panel-title">
-                    <h2>Análisis Técnico</h2>
-                    <span class="badge" id="active-pair-badge">BTCUSDT</span>
+                    <span class="badge" id="left-pair-badge">BTCUSDT</span>
                 </div>
                 
-                <!-- Selectores de Par -->
-                <div class="pair-selector">
-                    <button class="pair-btn active" onclick="switchSymbol('BINANCE:BTCUSDT', 'BTCUSDT')">BTC/USDT</button>
-                    <button class="pair-btn" onclick="switchSymbol('CRYPTOCAP:BTC.D', 'Dom %')">Dom %</button>
+                <!-- Selectores de Par Izquierdo -->
+                <div class="pair-selector" id="left-selector">
+                    <button class="pair-btn active" onclick="switchSymbol('left', 'BINANCE:BTCUSDT', 'BTCUSDT', this)">BTC/USDT</button>
+                    <button class="pair-btn" onclick="switchSymbol('left', 'BINANCE:ETHUSDT', 'ETHUSDT', this)">ETH/USDT</button>
+                    <button class="pair-btn" onclick="switchSymbol('left', 'CRYPTOCAP:BTC.D', 'Dom %', this)">Dom %</button>
                 </div>
             </div>
             
             <!-- Gráfico de TradingView -->
-            <div class="chart-widget-container" id="tradingview-chart-container">
-                <div id="tradingview_btc" style="height: 100%; width: 100%;"></div>
+            <div class="chart-widget-container" id="tradingview_left-container">
+                <div id="tradingview_left" style="height: 100%; width: 100%;"></div>
+            </div>
+        </section>
+
+        <!-- Panel Derecho (ETH/USDT) -->
+        <section class="chart-panel" aria-label="Gráfico interactivo de ETH">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="badge" id="right-pair-badge">ETHUSDT</span>
+                </div>
+                
+                <!-- Selectores de Par Derecho -->
+                <div class="pair-selector" id="right-selector">
+                    <button class="pair-btn" onclick="switchSymbol('right', 'BINANCE:BTCUSDT', 'BTCUSDT', this)">BTC/USDT</button>
+                    <button class="pair-btn active" onclick="switchSymbol('right', 'BINANCE:ETHUSDT', 'ETHUSDT', this)">ETH/USDT</button>
+                    <button class="pair-btn" onclick="switchSymbol('right', 'CRYPTOCAP:BTC.D', 'Dom %', this)">Dom %</button>
+                </div>
+            </div>
+            
+            <!-- Gráfico de TradingView -->
+            <div class="chart-widget-container" id="tradingview_right-container">
+                <div id="tradingview_right" style="height: 100%; width: 100%;"></div>
             </div>
         </section>
 
@@ -272,12 +313,9 @@
     <!-- Scripts de TradingView y Lógica del Dashboard -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        // Símbolo activo por defecto
-        let activeTvSymbol = 'BINANCE:BTCUSDT';
-
-        // Cargar widget del gráfico de TradingView
-        function loadTradingViewChart(tvSymbol) {
-            document.getElementById('tradingview-chart-container').innerHTML = '<div id="tradingview_btc" style="height: 100%; width: 100%;"></div>';
+        // Cargar widget del gráfico de TradingView para una sección
+        function loadChart(containerId, tvSymbol) {
+            document.getElementById(containerId + '-container').innerHTML = `<div id="${containerId}" style="height: 100%; width: 100%;"></div>`;
             new TradingView.widget({
                 "autosize": true,
                 "symbol": tvSymbol,
@@ -289,7 +327,7 @@
                 "enable_publishing": false,
                 "hide_side_toolbar": false,
                 "allow_symbol_change": true,
-                "container_id": "tradingview_btc",
+                "container_id": containerId,
                 "studies": [
                     "PivotPointsStandard@tv-basicstudies"
                 ],
@@ -304,31 +342,39 @@
         }
 
         // Cambiar de Símbolo Activo
-        function switchSymbol(tvSymbol, displayName) {
-            activeTvSymbol = tvSymbol;
-            
+        function switchSymbol(side, tvSymbol, displayName, element) {
             // Actualizar badge del par activo
-            document.getElementById('active-pair-badge').innerText = displayName;
+            document.getElementById(`${side}-pair-badge`).innerText = displayName;
             
-            // Actualizar estado activo de los botones
-            const buttons = document.querySelectorAll('.pair-btn');
+            // Actualizar estado activo de los botones de esa sección
+            const selector = document.getElementById(`${side}-selector`);
+            const buttons = selector.querySelectorAll('.pair-btn');
             buttons.forEach(btn => {
-                if (btn.innerText === displayName || 
-                    (btn.innerText === 'BTC/USDT' && displayName === 'BTCUSDT')) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
+                btn.classList.remove('active');
             });
+            
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // Fallback por si se llama desde otra parte sin pasar el elemento
+                buttons.forEach(btn => {
+                    if (btn.innerText === displayName || 
+                        (btn.innerText === 'BTC/USDT' && displayName === 'BTCUSDT') ||
+                        (btn.innerText === 'ETH/USDT' && displayName === 'ETHUSDT')) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
 
-            // Recargar Gráfico de TradingView
-            loadTradingViewChart(tvSymbol);
+            // Recargar Gráfico de TradingView en el contenedor respectivo
+            loadChart(`tradingview_${side}`, tvSymbol);
         }
 
         // Inicialización al cargar la página
         window.addEventListener('DOMContentLoaded', () => {
-            // Inicializar gráfico por defecto
-            loadTradingViewChart(activeTvSymbol);
+            // Inicializar gráficos por defecto
+            loadChart('tradingview_left', 'BINANCE:BTCUSDT');
+            loadChart('tradingview_right', 'BINANCE:ETHUSDT');
 
             // Ocultar pantalla de carga
             setTimeout(() => {
