@@ -12,14 +12,14 @@ while ($true) {
     Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Conectando a la red Wi-Fi '$WifiName'..." -ForegroundColor Cyan
     netsh wlan connect name="$WifiName" | Out-Null
     
-    Write-Host "Esperando 10 segundos..."
-    Start-Sleep -Seconds 10
+    Write-Host "Esperando 15 segundos..."
+    Start-Sleep -Seconds 15
     
     Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Abriendo Google Chrome en pantalla completa..." -ForegroundColor Cyan
     Start-Process "chrome.exe" "--incognito --start-fullscreen https://mdchi2.github.io/tradingview/"
     
-    Write-Host "Esperando 20 segundos..."
-    Start-Sleep -Seconds 20
+    Write-Host "Esperando 30 segundos..."
+    Start-Sleep -Seconds 30
     
     Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Desconectando Wi-Fi..." -ForegroundColor Red
     netsh wlan disconnect | Out-Null
