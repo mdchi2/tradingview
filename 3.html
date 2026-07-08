@@ -3,73 +3,1121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTC/USDT 1m Chart | TradingView</title>
+    <title>BTC/USDT Trading Dashboard with VPVR</title>
+    <!-- Google Fonts for premium trading look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        html, body {
+        :root {
+            --bg-color: #080a0f;
+            --panel-bg: rgba(17, 22, 37, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f4f8;
+            --text-secondary: #90a4ae;
+            --binance-green: #0ecb81;
+            --binance-red: #f6465d;
+            --binance-yellow: #f0b90b;
+            --glow-green: rgba(14, 203, 129, 0.15);
+            --glow-red: rgba(246, 70, 93, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #131722;
         }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Live Header Stats */
+        .dashboard-header {
+            background-color: rgba(11, 14, 22, 0.95);
+            border-bottom: 1px solid var(--panel-border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .coin-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--binance-yellow), #e28a00);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #000;
+            font-size: 16px;
+            box-shadow: 0 0 12px rgba(240, 185, 11, 0.4);
+        }
+
+        .coin-name {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .coin-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .coin-title span {
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .coin-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .stats-grid {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-value.price {
+            font-size: 22px;
+            transition: color 0.15s ease, text-shadow 0.15s ease;
+        }
+
+        .stat-value.up {
+            color: var(--binance-green);
+        }
+
+        .stat-value.down {
+            color: var(--binance-red);
+        }
+
+        /* Main Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Chart Wrapper */
+        .chart-wrapper {
+            flex: 1;
+            position: relative;
+            background-color: #0c0d12;
+        }
+
         #tradingview_chart {
             width: 100%;
-            height: 100vh;
+            height: 100%;
+        }
+
+        #vpvr_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Sidebar Control Panel */
+        .control-sidebar {
+            width: 280px;
+            background-color: rgba(11, 14, 23, 0.95);
+            border-left: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 24px;
+            overflow-y: auto;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        /* Switches & Controls styling */
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .control-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Custom Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .2s;
+            border-radius: 20px;
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-toggle {
+            background-color: var(--binance-yellow);
+        }
+
+        input:checked + .slider-toggle:before {
+            transform: translateX(18px);
+            background-color: #000;
+        }
+
+        /* Custom Slider Styling */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 450ms ease-in;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--binance-yellow);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-option {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-option.active {
+            background: var(--binance-yellow);
+            color: #000;
+        }
+
+        /* Status Indicator Banner */
+        .conn-status {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 16px;
+        }
+
+        .status-pulse {
+            width: 6px;
+            height: 6px;
+            background-color: var(--binance-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--binance-green);
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Tooltip style */
+        .tooltip {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            padding: 10px;
+            border-left: 3px solid var(--binance-yellow);
         }
     </style>
 </head>
 <body>
 
-    <div id="tradingview_chart"></div>
+    <!-- Live Header Stats -->
+    <header class="dashboard-header">
+        <div class="logo-section">
+            <div class="coin-icon">₿</div>
+            <div class="coin-name">
+                <div class="coin-title">BTCUSDT <span>Binance Live</span></div>
+                <div class="coin-subtitle">Intervalo: 1 Minuto (1m)</div>
+            </div>
+        </div>
 
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    <script type="text/javascript">
-        new TradingView.widget({
-            "autosize": true,
-            "symbol": "BINANCE:BTCUSDT",
-            "interval": "1",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1",
-            "locale": "es",
-            "enable_publishing": false,
-            "hide_side_toolbar": false,
-            "allow_symbol_change": true,
-            "container_id": "tradingview_chart",
-            "studies": [
-                {
-                    "id": "MAExp@tv-basicstudies",
-                    "uid": "ema7",
-                    "inputs": {
-                        "length": 7
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Precio</span>
+                <span class="stat-value price" id="live_price">---.--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Cambio 24h</span>
+                <span class="stat-value" id="price_change">--.--%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Máx / Mín 24h</span>
+                <span class="stat-value" id="price_range">--- / ---</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Volumen 24h (USDT)</span>
+                <span class="stat-value" id="volume_24h">---.-- M</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label" style="color: var(--binance-yellow);">POC Activo</span>
+                <span class="stat-value" id="poc_value" style="color: var(--binance-yellow);">---.--</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        <!-- Chart Area -->
+        <div class="chart-wrapper">
+            <div id="tradingview_chart"></div>
+            <canvas id="vpvr_canvas"></canvas>
+        </div>
+
+        <!-- Sidebar Panel -->
+        <aside class="control-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Indicadores</h3>
+                
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #FF0000;"></span>
+                        EMA 7 (Rojo)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ema7" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #00FF00;"></span>
+                        EMA 25 (Verde)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ema25" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: rgba(255, 235, 59, 0.8);"></span>
+                        Puntos Pivote
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_pivots" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Perfil de Volumen (VPVR)</h3>
+                
+                <div class="control-row">
+                    <span class="control-label">Activar VPVR</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_vpvr" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Número de Filas (Bins)</span>
+                        <span id="label_bins">50</span>
+                    </div>
+                    <input type="range" id="slider_bins" class="range-slider" min="20" max="100" step="5" value="50">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Opacidad del Perfil</span>
+                        <span id="label_opacity">40%</span>
+                    </div>
+                    <input type="range" id="slider_opacity" class="range-slider" min="10" max="90" step="5" value="40">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Alineación</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-option active" id="align_left">Izquierda</button>
+                        <button class="btn-option" id="align_right">Derecha</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tooltip">
+                <strong>Visible Range Volume Profile (VPVR):</strong> Calcula la distribución del volumen operado en el rango de precios visible en tu pantalla. La línea naranja representa el <strong>POC (Point of Control)</strong>, que es el nivel de precio con mayor volumen operado.
+            </div>
+
+            <div class="conn-status">
+                <div class="status-pulse" id="connection_dot"></div>
+                <span id="connection_text">Conectando a Binance Stream...</span>
+            </div>
+        </aside>
+    </div>
+
+    <!-- TradingView Lightweight Charts stand-alone production build -->
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+    <script>
+        // DOM Elements
+        const livePriceEl = document.getElementById('live_price');
+        const priceChangeEl = document.getElementById('price_change');
+        const priceRangeEl = document.getElementById('price_range');
+        const volume24hEl = document.getElementById('volume_24h');
+        const pocValueEl = document.getElementById('poc_value');
+        const toggleEma7 = document.getElementById('toggle_ema7');
+        const toggleEma25 = document.getElementById('toggle_ema25');
+        const togglePivots = document.getElementById('toggle_pivots');
+        const toggleVpvr = document.getElementById('toggle_vpvr');
+        const sliderBins = document.getElementById('slider_bins');
+        const sliderOpacity = document.getElementById('slider_opacity');
+        const labelBins = document.getElementById('label_bins');
+        const labelOpacity = document.getElementById('label_opacity');
+        const alignLeftBtn = document.getElementById('align_left');
+        const alignRightBtn = document.getElementById('align_right');
+        const connectionDot = document.getElementById('connection_dot');
+        const connectionText = document.getElementById('connection_text');
+
+        // Global Chart variables
+        let chart;
+        let candleSeries;
+        let volumeSeries;
+        let ema7Series;
+        let ema25Series;
+        let pivotLines = [];
+
+        // Global data stores
+        let chartData = [];
+        let ema7Data = [];
+        let ema25Data = [];
+        let pivots = { P: 0, R1: 0, S1: 0, R2: 0, S2: 0 };
+        
+        // VPVR configuration state
+        let vpvrEnabled = true;
+        let vpvrBins = 50;
+        let vpvrOpacity = 0.40;
+        let vpvrAlignment = 'left'; // 'left' or 'right'
+
+        // Canvas Setup
+        const canvas = document.getElementById('vpvr_canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Initialize Lightweight Chart
+        function initChart() {
+            const chartDiv = document.getElementById('tradingview_chart');
+            chart = LightweightCharts.createChart(chartDiv, {
+                layout: {
+                    background: { type: 'solid', color: '#0c0d12' },
+                    textColor: '#90a4ae',
+                    fontSize: 12,
+                    fontFamily: "'Outfit', sans-serif"
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.03)' }
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    scaleMargins: {
+                        top: 0.1,
+                        bottom: 0.15
                     }
                 },
-                {
-                    "id": "MAExp@tv-basicstudies",
-                    "uid": "ema25",
-                    "inputs": {
-                        "length": 25
+                timeScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    timeVisible: true,
+                    secondsVisible: false,
+                    barSpacing: 6
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                    vertLine: {
+                        color: 'rgba(255, 255, 255, 0.15)',
+                        width: 1,
+                        style: LightweightCharts.LineStyle.Dashed
+                    },
+                    horzLine: {
+                        color: 'rgba(255, 255, 255, 0.15)',
+                        width: 1,
+                        style: LightweightCharts.LineStyle.Dashed
                     }
                 },
-                {
-                    "id": "PivotPointsStandard@tv-basicstudies",
-                    "inputs": {
-                        "type": "Traditional"
+                localization: {
+                    locale: 'es-AR',
+                    timeFormatter: (timestamp) => {
+                        // Format date to local Argentina timezone
+                        const date = new Date(timestamp * 1000);
+                        return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
                     }
                 }
-            ],
-            "studies_overrides": {
-                "ema7.plot.color": "#FF0000",
-                "ema25.plot.color": "#00FF00",
-                "pivot points standard.show historical pivots": false,
-                "pivot points standard.show R4": false,
-                "pivot points standard.show R5": false,
-                "pivot points standard.show S4": false,
-                "pivot points standard.show S5": false
+            });
+
+            // Add candlestick series
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#0ecb81',
+                downColor: '#f6465d',
+                borderVisible: false,
+                wickUpColor: '#0ecb81',
+                wickDownColor: '#f6465d'
+            });
+
+            // Add Volume series as overlay
+            volumeSeries = chart.addHistogramSeries({
+                color: 'rgba(14, 203, 129, 0.2)',
+                priceFormat: { type: 'volume' },
+                priceScaleId: '', // overlay
+            });
+            volumeSeries.priceScale().applyOptions({
+                scaleMargins: {
+                    top: 0.8, // Vol occupies bottom 20% of chart
+                    bottom: 0
+                }
+            });
+
+            // Add EMA series
+            ema7Series = chart.addLineSeries({
+                color: '#FF0000',
+                lineWidth: 1.5,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+
+            ema25Series = chart.addLineSeries({
+                color: '#00FF00',
+                lineWidth: 1.5,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+
+            // Subscribe to visible range changes to recalculate VPVR
+            chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+                requestAnimationFrame(drawVPVR);
+            });
+
+            // Handle Resize
+            const resizeObserver = new ResizeObserver(entries => {
+                if (entries.length === 0 || !entries[0].contentRect) return;
+                const { width, height } = entries[0].contentRect;
+                chart.resize(width, height);
+                resizeCanvas();
+            });
+            resizeObserver.observe(chartDiv);
+            resizeCanvas();
+        }
+
+        // Handle Canvas overlay resize
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            requestAnimationFrame(drawVPVR);
+        }
+
+        // Calculate EMA
+        function calculateEMA(data, length) {
+            const ema = [];
+            const k = 2 / (length + 1);
+            let prevEma = data[0].close;
+            ema.push({ time: data[0].time, value: prevEma });
+
+            for (let i = 1; i < data.length; i++) {
+                const val = data[i].close * k + prevEma * (1 - k);
+                ema.push({ time: data[i].time, value: val });
+                prevEma = val;
+            }
+            return ema;
+        }
+
+        // Fetch Historical Data (1m and 1d candles)
+        async function fetchBinanceData() {
+            try {
+                // Fetch 1m candles for chart (1000 limit)
+                const klinesRes = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=1000');
+                const klinesData = await klinesRes.json();
+                
+                // Fetch daily candles to compute pivots (yesterday is index 0 in limit 2)
+                const pivotsRes = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=2');
+                const dailyData = await pivotsRes.json();
+
+                // Process Pivots
+                if (dailyData && dailyData.length >= 2) {
+                    const yesterday = dailyData[0];
+                    const H = parseFloat(yesterday[2]); // High
+                    const L = parseFloat(yesterday[3]); // Low
+                    const C = parseFloat(yesterday[4]); // Close
+
+                    pivots.P = (H + L + C) / 3;
+                    pivots.R1 = 2 * pivots.P - L;
+                    pivots.S1 = 2 * pivots.P - H;
+                    pivots.R2 = pivots.P + (H - L);
+                    pivots.S2 = pivots.P - (H - L);
+                }
+
+                // Process 1m Candles
+                chartData = klinesData.map(d => ({
+                    time: Math.floor(d[0] / 1000),
+                    open: parseFloat(d[1]),
+                    high: parseFloat(d[2]),
+                    low: parseFloat(d[3]),
+                    close: parseFloat(d[4]),
+                    volume: parseFloat(d[5])
+                }));
+
+                // Calculate EMAs
+                ema7Data = calculateEMA(chartData, 7);
+                ema25Data = calculateEMA(chartData, 25);
+
+                // Load to series
+                candleSeries.setData(chartData);
+                volumeSeries.setData(chartData.map(d => ({
+                    time: d.time,
+                    value: d.volume,
+                    color: d.close >= d.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
+                })));
+                ema7Series.setData(ema7Data);
+                ema25Series.setData(ema25Data);
+
+                updatePivotLines();
+                requestAnimationFrame(drawVPVR);
+
+                // Connect to Stream
+                connectWebsocket();
+
+            } catch (err) {
+                console.error("Error fetching Binance data: ", err);
+                connectionText.innerText = "Error cargando datos de Binance.";
+                connectionDot.style.backgroundColor = "var(--binance-red)";
+                connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+            }
+        }
+
+        // Draw / Remove Pivot lines
+        function updatePivotLines() {
+            // Remove existing lines
+            pivotLines.forEach(l => {
+                try { candleSeries.removePriceLine(l); } catch(e) {}
+            });
+            pivotLines = [];
+
+            if (!togglePivots.checked) return;
+
+            const lineOptions = [
+                { price: pivots.R2, color: 'rgba(246, 70, 93, 0.65)', title: 'R2' },
+                { price: pivots.R1, color: 'rgba(246, 70, 93, 0.45)', title: 'R1' },
+                { price: pivots.P, color: 'rgba(240, 185, 11, 0.7)', title: 'P' },
+                { price: pivots.S1, color: 'rgba(14, 203, 129, 0.45)', title: 'S1' },
+                { price: pivots.S2, color: 'rgba(14, 203, 129, 0.65)', title: 'S2' }
+            ];
+
+            lineOptions.forEach(opt => {
+                const line = candleSeries.createPriceLine({
+                    price: opt.price,
+                    color: opt.color,
+                    lineWidth: 1,
+                    lineStyle: LightweightCharts.LineStyle.Dashed,
+                    axisLabelVisible: true,
+                    title: opt.title
+                });
+                pivotLines.push(line);
+            });
+        }
+
+        // Connect WebSocket combined streams
+        function connectWebsocket() {
+            const ws = new WebSocket('wss://stream.binance.com:9443/stream?streams=btcusdt@kline_1m/btcusdt@ticker');
+            
+            ws.onopen = () => {
+                connectionText.innerText = "Conexión en vivo activa";
+                connectionDot.style.backgroundColor = "var(--binance-green)";
+                connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+            };
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                const stream = msg.stream;
+                const data = msg.data;
+
+                if (stream === "btcusdt@kline_1m") {
+                    const k = data.k;
+                    updateRealtimeKline(k);
+                } else if (stream === "btcusdt@ticker") {
+                    updateHeaderStats(data);
+                }
+            };
+
+            ws.onerror = (e) => {
+                console.error("Websocket Error: ", e);
+            };
+
+            ws.onclose = () => {
+                connectionText.innerText = "Desconectado. Reintentando...";
+                connectionDot.style.backgroundColor = "var(--binance-red)";
+                connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+                setTimeout(connectWebsocket, 5000);
+            };
+        }
+
+        // Update real-time statistics in header
+        let lastPrice = 0;
+        function updateHeaderStats(tick) {
+            const price = parseFloat(tick.c);
+            
+            // Format live price
+            livePriceEl.innerText = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            // Animate live price color update based on tick direction
+            if (lastPrice !== 0 && price !== lastPrice) {
+                if (price > lastPrice) {
+                    livePriceEl.className = "stat-value price up";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(14, 203, 129, 0.4)";
+                } else {
+                    livePriceEl.className = "stat-value price down";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(246, 70, 93, 0.4)";
+                }
+            }
+            lastPrice = price;
+
+            // Reset text shadow after 200ms
+            setTimeout(() => {
+                livePriceEl.style.textShadow = "none";
+            }, 200);
+
+            // Format 24h change
+            const changePercent = parseFloat(tick.P);
+            priceChangeEl.innerText = (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%";
+            priceChangeEl.className = "stat-value " + (changePercent >= 0 ? "up" : "down");
+
+            // Format high/low
+            const high = parseFloat(tick.h).toLocaleString('en-US', { maximumFractionDigits: 0 });
+            const low = parseFloat(tick.l).toLocaleString('en-US', { maximumFractionDigits: 0 });
+            priceRangeEl.innerText = `${high} / ${low}`;
+
+            // Format 24h Volume (USDT in Millions)
+            const quoteVolume = parseFloat(tick.q) / 1000000;
+            volume24hEl.innerText = quoteVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " M";
+        }
+
+        // Handle kline websocket updates
+        function updateRealtimeKline(k) {
+            const time = Math.floor(k.t / 1000);
+            const candle = {
+                time: time,
+                open: parseFloat(k.o),
+                high: parseFloat(k.h),
+                low: parseFloat(k.l),
+                close: parseFloat(k.c),
+                volume: parseFloat(k.v)
+            };
+
+            const lastIdx = chartData.length - 1;
+            if (lastIdx >= 0 && chartData[lastIdx].time === time) {
+                // Update current candle
+                chartData[lastIdx] = candle;
+
+                const k7 = 2 / (7 + 1);
+                const prevEma7 = ema7Data[lastIdx - 1].value;
+                ema7Data[lastIdx] = { time: time, value: candle.close * k7 + prevEma7 * (1 - k7) };
+
+                const k25 = 2 / (25 + 1);
+                const prevEma25 = ema25Data[lastIdx - 1].value;
+                ema25Data[lastIdx] = { time: time, value: candle.close * k25 + prevEma25 * (1 - k25) };
+            } else {
+                // Insert new candle
+                chartData.push(candle);
+
+                const k7 = 2 / (7 + 1);
+                const prevEma7 = ema7Data[lastIdx].value;
+                ema7Data.push({ time: time, value: candle.close * k7 + prevEma7 * (1 - k7) });
+
+                const k25 = 2 / (25 + 1);
+                const prevEma25 = ema25Data[lastIdx].value;
+                ema25Data.push({ time: time, value: candle.close * k25 + prevEma25 * (1 - k25) });
+
+                // Keep memory clean
+                if (chartData.length > 1200) {
+                    chartData.shift();
+                    ema7Data.shift();
+                    ema25Data.shift();
+                }
+            }
+
+            // Update series
+            candleSeries.update(candle);
+            volumeSeries.update({
+                time: candle.time,
+                value: candle.volume,
+                color: candle.close >= candle.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
+            });
+
+            if (toggleEma7.checked) {
+                ema7Series.update(ema7Data[ema7Data.length - 1]);
+            }
+            if (toggleEma25.checked) {
+                ema25Series.update(ema25Data[ema25Data.length - 1]);
+            }
+
+            requestAnimationFrame(drawVPVR);
+        }
+
+        // Draw Volume Profile Overlay (VPVR)
+        function drawVPVR() {
+            // Get client rect bounds
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (!vpvrEnabled || chartData.length === 0) {
+                pocValueEl.innerText = "---.--";
+                return;
+            }
+
+            // Get range of visible data indices
+            const logicalRange = chart.timeScale().getVisibleLogicalRange();
+            if (!logicalRange) return;
+
+            const fromIdx = Math.max(0, Math.floor(logicalRange.from));
+            const toIdx = Math.min(chartData.length - 1, Math.ceil(logicalRange.to));
+
+            const visibleData = [];
+            for (let i = fromIdx; i <= toIdx; i++) {
+                if (chartData[i]) {
+                    visibleData.push(chartData[i]);
+                }
+            }
+
+            if (visibleData.length === 0) return;
+
+            // Find min/max price in visible data
+            let minPrice = Infinity;
+            let maxPrice = -Infinity;
+            for (const d of visibleData) {
+                if (d.low < minPrice) minPrice = d.low;
+                if (d.high > maxPrice) maxPrice = d.high;
+            }
+
+            if (minPrice === Infinity || maxPrice === -Infinity) return;
+
+            // Compute bins
+            const step = (maxPrice - minPrice) / vpvrBins;
+            const buyBins = Array(vpvrBins).fill(0);
+            const sellBins = Array(vpvrBins).fill(0);
+            const totalBins = Array(vpvrBins).fill(0);
+
+            for (const d of visibleData) {
+                const lowBin = Math.floor((d.low - minPrice) / step);
+                const highBin = Math.floor((d.high - minPrice) / step);
+                const rangeSpan = Math.max(1, highBin - lowBin + 1);
+                
+                // Distribute volume equally across all bins overlap
+                const volShare = d.volume / rangeSpan;
+                const isUp = d.close >= d.open;
+
+                for (let b = Math.max(0, lowBin); b <= Math.min(vpvrBins - 1, highBin); b++) {
+                    if (isUp) {
+                        buyBins[b] += volShare;
+                    } else {
+                        sellBins[b] += volShare;
+                    }
+                    totalBins[b] += volShare;
+                }
+            }
+
+            // Find POC (Point of Control)
+            let maxVol = 0;
+            let pocBinIdx = -1;
+            for (let i = 0; i < vpvrBins; i++) {
+                if (totalBins[i] > maxVol) {
+                    maxVol = totalBins[i];
+                    pocBinIdx = i;
+                }
+            }
+
+            const pocPrice = minPrice + (pocBinIdx + 0.5) * step;
+            pocValueEl.innerText = pocPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Max bar width in pixels (30% of total chart pane width)
+            // Discounting approximately 80px for the right price scale
+            const chartPaneWidth = width - 80;
+            const maxBarWidth = chartPaneWidth * 0.25;
+
+            // Draw bars
+            for (let i = 0; i < vpvrBins; i++) {
+                const totalVal = totalBins[i];
+                if (totalVal === 0) continue;
+
+                // Price levels of this bin
+                const priceStart = minPrice + i * step;
+                const priceEnd = priceStart + step;
+
+                // Convert price to Y coordinates on the chart
+                const yStart = candleSeries.priceToCoordinate(priceStart);
+                const yEnd = candleSeries.priceToCoordinate(priceEnd);
+
+                if (yStart === null || yEnd === null) continue;
+
+                const yTop = Math.min(yStart, yEnd);
+                const yBottom = Math.max(yStart, yEnd);
+                const barHeight = Math.max(1, yBottom - yTop - 0.5); // Subtract margin
+
+                // Skip drawing if outside chart display area
+                if (yTop < 0 || yBottom > height - 26) continue;
+
+                // Bar sizing
+                const barWidth = (totalVal / maxVol) * maxBarWidth;
+                const buyWidth = (buyBins[i] / totalVal) * barWidth;
+                const sellWidth = (sellBins[i] / totalVal) * barWidth;
+
+                // Compute horizontal drawing coordinate
+                let xStart = 0;
+                if (vpvrAlignment === 'right') {
+                    xStart = chartPaneWidth - barWidth;
+                }
+
+                // Draw Buy volume (semi-transparent green)
+                ctx.fillStyle = `rgba(14, 203, 129, ${vpvrOpacity})`;
+                ctx.fillRect(
+                    vpvrAlignment === 'left' ? xStart : xStart, 
+                    yTop, 
+                    buyWidth, 
+                    barHeight
+                );
+
+                // Draw Sell volume (semi-transparent red)
+                ctx.fillStyle = `rgba(246, 70, 93, ${vpvrOpacity})`;
+                ctx.fillRect(
+                    vpvrAlignment === 'left' ? xStart + buyWidth : xStart + buyWidth, 
+                    yTop, 
+                    sellWidth, 
+                    barHeight
+                );
+            }
+
+            // Draw POC orange line
+            if (pocBinIdx !== -1) {
+                const pocPriceCenter = minPrice + (pocBinIdx + 0.5) * step;
+                const yPoc = candleSeries.priceToCoordinate(pocPriceCenter);
+                if (yPoc !== null && yPoc >= 0 && yPoc <= height - 26) {
+                    ctx.strokeStyle = '#f0b90b';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yPoc);
+                    ctx.lineTo(chartPaneWidth, yPoc);
+                    ctx.stroke();
+
+                    // POC Label text
+                    ctx.font = "bold 10px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#f0b90b';
+                    ctx.fillText("POC: " + pocPrice.toFixed(2), 10, yPoc - 4);
+                }
+            }
+        }
+
+        // Toggle Switch & Slider Listeners
+        toggleEma7.addEventListener('change', () => {
+            if (toggleEma7.checked) {
+                ema7Series.setData(ema7Data);
+            } else {
+                ema7Series.setData([]);
             }
         });
-    </script>
 
+        toggleEma25.addEventListener('change', () => {
+            if (toggleEma25.checked) {
+                ema25Series.setData(ema25Data);
+            } else {
+                ema25Series.setData([]);
+            }
+        });
+
+        togglePivots.addEventListener('change', () => {
+            updatePivotLines();
+        });
+
+        toggleVpvr.addEventListener('change', () => {
+            vpvrEnabled = toggleVpvr.checked;
+            requestAnimationFrame(drawVPVR);
+        });
+
+        sliderBins.addEventListener('input', (e) => {
+            vpvrBins = parseInt(e.target.value);
+            labelBins.innerText = vpvrBins;
+            requestAnimationFrame(drawVPVR);
+        });
+
+        sliderOpacity.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            vpvrOpacity = val / 100;
+            labelOpacity.innerText = val + "%";
+            requestAnimationFrame(drawVPVR);
+        });
+
+        alignLeftBtn.addEventListener('click', () => {
+            vpvrAlignment = 'left';
+            alignLeftBtn.classList.add('active');
+            alignRightBtn.classList.remove('active');
+            requestAnimationFrame(drawVPVR);
+        });
+
+        alignRightBtn.addEventListener('click', () => {
+            vpvrAlignment = 'right';
+            alignRightBtn.classList.add('active');
+            alignLeftBtn.classList.remove('active');
+            requestAnimationFrame(drawVPVR);
+        });
+
+        // Initialize script
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            fetchBinanceData();
+        });
+    </script>
 </body>
 </html>
