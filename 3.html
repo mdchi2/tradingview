@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC/USDT 1m Chart | TradingView</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #131722;
+        }
+        #tradingview_chart {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tradingview_chart"></div>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript">
+        new TradingView.widget({
+            "autosize": true,
+            "symbol": "BINANCE:BTCUSDT",
+            "interval": "1",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "1",
+            "locale": "es",
+            "enable_publishing": false,
+            "hide_side_toolbar": false,
+            "allow_symbol_change": true,
+            "container_id": "tradingview_chart",
+            "studies": [
+                {
+                    "id": "MAExp@tv-basicstudies",
+                    "uid": "ema7",
+                    "inputs": {
+                        "length": 7
+                    }
+                },
+                {
+                    "id": "MAExp@tv-basicstudies",
+                    "uid": "ema25",
+                    "inputs": {
+                        "length": 25
+                    }
+                },
+                {
+                    "id": "PivotPointsStandard@tv-basicstudies",
+                    "inputs": {
+                        "type": "Traditional"
+                    }
+                }
+            ],
+            "studies_overrides": {
+                "ema7.plot.color": "#FF0000",
+                "ema25.plot.color": "#00FF00",
+                "pivot points standard.show historical pivots": false,
+                "pivot points standard.show R4": false,
+                "pivot points standard.show R5": false,
+                "pivot points standard.show S4": false,
+                "pivot points standard.show S5": false
+            }
+        });
+    </script>
+
+</body>
+</html>
