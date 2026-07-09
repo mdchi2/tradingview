@@ -572,7 +572,27 @@
                     borderColor: 'rgba(255, 255, 255, 0.08)',
                     timeVisible: true,
                     secondsVisible: false,
-                    barSpacing: 6
+                    barSpacing: 6,
+                    tickMarkFormatter: (time, tickMarkType, locale) => {
+                        const date = new Date(time * 1000);
+                        const options = { timeZone: 'America/Argentina/Buenos_Aires' };
+                        if (tickMarkType === 0) { // Year
+                            return date.toLocaleDateString('es-AR', { ...options, year: 'numeric' });
+                        }
+                        if (tickMarkType === 1) { // Month
+                            return date.toLocaleDateString('es-AR', { ...options, month: 'short' });
+                        }
+                        if (tickMarkType === 2) { // DayOfMonth
+                            return date.toLocaleDateString('es-AR', { ...options, day: 'numeric' });
+                        }
+                        if (tickMarkType === 3) { // Time
+                            return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', hour12: false });
+                        }
+                        if (tickMarkType === 4) { // TimeWithSeconds
+                            return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                        }
+                        return null;
+                    }
                 },
                 crosshair: {
                     mode: LightweightCharts.CrosshairMode.Normal,
@@ -592,7 +612,7 @@
                     timeFormatter: (timestamp) => {
                         // Format date to local Argentina timezone
                         const date = new Date(timestamp * 1000);
-                        return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                        return date.toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', minute: '2-digit' });
                     }
                 }
             });
