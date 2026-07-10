@@ -439,16 +439,6 @@
                     </label>
                 </div>
 
-                <div class="control-row">
-                    <span class="control-label">
-                        <span class="indicator-dot" style="background-color: rgba(255, 235, 59, 0.8);"></span>
-                        Puntos Pivote
-                    </span>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle_pivots" checked>
-                        <span class="slider-toggle"></span>
-                    </label>
-                </div>
             </div>
 
             <div class="sidebar-section">
@@ -512,7 +502,7 @@
         const pocValueEl = document.getElementById('poc_value');
         const toggleEma7 = document.getElementById('toggle_ema7');
         const toggleEma25 = document.getElementById('toggle_ema25');
-        const togglePivots = document.getElementById('toggle_pivots');
+
         const toggleVpvr = document.getElementById('toggle_vpvr');
         const sliderBins = document.getElementById('slider_bins');
         const sliderOpacity = document.getElementById('slider_opacity');
@@ -529,13 +519,13 @@
         let volumeSeries;
         let ema7Series;
         let ema25Series;
-        let pivotLines = [];
+
 
         // Global data stores
         let chartData = [];
         let ema7Data = [];
         let ema25Data = [];
-        let pivots = { P: 0, R1: 0, S1: 0, R2: 0, S2: 0 };
+
         
         // VPVR configuration state
         let vpvrEnabled = true;
@@ -701,23 +691,7 @@
                 const klinesRes = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=1000');
                 const klinesData = await klinesRes.json();
                 
-                // Fetch daily candles to compute pivots (yesterday is index 0 in limit 2)
-                const pivotsRes = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=2');
-                const dailyData = await pivotsRes.json();
 
-                // Process Pivots
-                if (dailyData && dailyData.length >= 2) {
-                    const yesterday = dailyData[0];
-                    const H = parseFloat(yesterday[2]); // High
-                    const L = parseFloat(yesterday[3]); // Low
-                    const C = parseFloat(yesterday[4]); // Close
-
-                    pivots.P = (H + L + C) / 3;
-                    pivots.R1 = 2 * pivots.P - L;
-                    pivots.S1 = 2 * pivots.P - H;
-                    pivots.R2 = pivots.P + (H - L);
-                    pivots.S2 = pivots.P - (H - L);
-                }
 
                 // Process 1m Candles
                 chartData = klinesData.map(d => ({
@@ -743,7 +717,7 @@
                 ema7Series.setData(ema7Data);
                 ema25Series.setData(ema25Data);
 
-                updatePivotLines();
+
                 requestAnimationFrame(drawVPVR);
 
                 // Connect to Stream
@@ -757,36 +731,7 @@
             }
         }
 
-        // Draw / Remove Pivot lines
-        function updatePivotLines() {
-            // Remove existing lines
-            pivotLines.forEach(l => {
-                try { candleSeries.removePriceLine(l); } catch(e) {}
-            });
-            pivotLines = [];
 
-            if (!togglePivots.checked) return;
-
-            const lineOptions = [
-                { price: pivots.R2, color: 'rgba(246, 70, 93, 0.65)', title: 'R2' },
-                { price: pivots.R1, color: 'rgba(246, 70, 93, 0.45)', title: 'R1' },
-                { price: pivots.P, color: 'rgba(240, 185, 11, 0.7)', title: 'P' },
-                { price: pivots.S1, color: 'rgba(14, 203, 129, 0.45)', title: 'S1' },
-                { price: pivots.S2, color: 'rgba(14, 203, 129, 0.65)', title: 'S2' }
-            ];
-
-            lineOptions.forEach(opt => {
-                const line = candleSeries.createPriceLine({
-                    price: opt.price,
-                    color: opt.color,
-                    lineWidth: 1,
-                    lineStyle: LightweightCharts.LineStyle.Dashed,
-                    axisLabelVisible: true,
-                    title: opt.title
-                });
-                pivotLines.push(line);
-            });
-        }
 
         // Connect WebSocket combined streams
         function connectWebsocket() {
@@ -1097,9 +1042,7 @@
             }
         });
 
-        togglePivots.addEventListener('change', () => {
-            updatePivotLines();
-        });
+
 
         toggleVpvr.addEventListener('change', () => {
             vpvrEnabled = toggleVpvr.checked;
