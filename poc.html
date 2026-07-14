@@ -477,6 +477,22 @@
                         <button class="btn-option" id="align_right">Derecha</button>
                     </div>
                 </div>
+
+                <div class="control-row" style="margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 12px;">
+                    <span class="control-label">Líneas de Picos</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_peaks" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Cantidad de Picos</span>
+                        <span id="label_peaks">5</span>
+                    </div>
+                    <input type="range" id="slider_peaks" class="range-slider" min="1" max="5" step="1" value="5">
+                </div>
             </div>
 
             <div class="tooltip">
@@ -512,6 +528,9 @@
         const alignRightBtn = document.getElementById('align_right');
         const connectionDot = document.getElementById('connection_dot');
         const connectionText = document.getElementById('connection_text');
+        const togglePeaks = document.getElementById('toggle_peaks');
+        const sliderPeaks = document.getElementById('slider_peaks');
+        const labelPeaks = document.getElementById('label_peaks');
 
         // Global Chart variables
         let chart;
@@ -532,6 +551,8 @@
         let vpvrBins = 50;
         let vpvrOpacity = 0.40;
         let vpvrAlignment = 'left'; // 'left' or 'right'
+        let peaksEnabled = true;
+        let peaksCount = 5;
 
         // Canvas Setup
         const canvas = document.getElementById('vpvr_canvas');
@@ -1017,11 +1038,59 @@
                     ctx.lineTo(chartPaneWidth, yPoc);
                     ctx.stroke();
 
-                    // POC Label text
-                    ctx.font = "bold 10px 'JetBrains Mono', monospace";
+                    // POC Label text - rounded to nearest 10, no decimals, and larger font (13px)
+                    const roundedPoc = Math.round(pocPrice / 10) * 10;
+                    ctx.font = "bold 13px 'JetBrains Mono', monospace";
                     ctx.fillStyle = '#f0b90b';
-                    ctx.fillText("POC: " + pocPrice.toFixed(2), 10, yPoc - 4);
+                    ctx.fillText("POC: " + roundedPoc.toLocaleString('en-US', { maximumFractionDigits: 0 }), 10, yPoc - 4);
                 }
+            }
+
+            // Find local peaks (local maxima) in volume profile
+            const peaks = [];
+            for (let i = 0; i < vpvrBins; i++) {
+                const val = totalBins[i];
+                if (val === 0) continue;
+                const prev = i > 0 ? totalBins[i - 1] : 0;
+                const next = i < vpvrBins - 1 ? totalBins[i + 1] : 0;
+                if (val > prev && val > next) {
+                    const price = minPrice + (i + 0.5) * step;
+                    peaks.push({
+                        index: i,
+                        volume: val,
+                        price: price
+                    });
+                }
+            }
+
+            // Draw other peaks if enabled
+            if (peaksEnabled) {
+                // Sort peaks by volume descending
+                peaks.sort((a, b) => b.volume - a.volume);
+                
+                // Exclude POC (global max) and take the top peaksCount
+                const otherPeaks = peaks.filter(p => p.index !== pocBinIdx).slice(0, peaksCount);
+                
+                otherPeaks.forEach(peak => {
+                    const yPeak = candleSeries.priceToCoordinate(peak.price);
+                    if (yPeak !== null && yPeak >= 0 && yPeak <= height - 26) {
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(0, 210, 255, 0.5)'; // vibrant semi-transparent cyan
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([4, 4]); // dashed line
+                        ctx.beginPath();
+                        ctx.moveTo(0, yPeak);
+                        ctx.lineTo(chartPaneWidth, yPeak);
+                        ctx.stroke();
+                        ctx.restore();
+
+                        // Peak Label text - rounded to nearest 10, no decimals, and larger font (13px)
+                        const roundedPeak = Math.round(peak.price / 10) * 10;
+                        ctx.font = "bold 13px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = '#00d2ff';
+                        ctx.fillText("Pico: " + roundedPeak.toLocaleString('en-US', { maximumFractionDigits: 0 }), 10, yPeak - 4);
+                    }
+                });
             }
         }
 
@@ -1073,6 +1142,17 @@
             vpvrAlignment = 'right';
             alignRightBtn.classList.add('active');
             alignLeftBtn.classList.remove('active');
+            requestAnimationFrame(drawVPVR);
+        });
+
+        togglePeaks.addEventListener('change', () => {
+            peaksEnabled = togglePeaks.checked;
+            requestAnimationFrame(drawVPVR);
+        });
+
+        sliderPeaks.addEventListener('input', (e) => {
+            peaksCount = parseInt(e.target.value);
+            labelPeaks.innerText = peaksCount;
             requestAnimationFrame(drawVPVR);
         });
 
