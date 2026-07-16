@@ -313,6 +313,10 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
+        .btn-group.grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
         .btn-option {
             background: transparent;
             border: none;
@@ -414,6 +418,19 @@
 
         <!-- Sidebar Panel -->
         <aside class="control-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Temporalidad</h3>
+                <div class="btn-group grid-3">
+                    <button class="btn-option interval-btn active" data-interval="1m">1m</button>
+                    <button class="btn-option interval-btn" data-interval="5m">5m</button>
+                    <button class="btn-option interval-btn" data-interval="15m">15m</button>
+                    <button class="btn-option interval-btn" data-interval="30m">30m</button>
+                    <button class="btn-option interval-btn" data-interval="1h">1h</button>
+                    <button class="btn-option interval-btn" data-interval="4h">4h</button>
+                    <button class="btn-option interval-btn" data-interval="1d">1d</button>
+                </div>
+            </div>
+
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Indicadores</h3>
                 
@@ -538,12 +555,14 @@
         let volumeSeries;
         let ema7Series;
         let ema25Series;
+        let ws;
 
 
         // Global data stores
         let chartData = [];
         let ema7Data = [];
         let ema25Data = [];
+        let currentInterval = '1m';
 
         
         // VPVR configuration state
@@ -621,9 +640,14 @@
                 localization: {
                     locale: 'es-AR',
                     timeFormatter: (timestamp) => {
-                        // Format date to local Argentina timezone
                         const date = new Date(timestamp * 1000);
-                        return date.toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', minute: '2-digit' });
+                        const isIntraday = currentInterval !== '1d';
+                        const options = { timeZone: 'America/Argentina/Buenos_Aires' };
+                        if (isIntraday) {
+                            return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit' });
+                        } else {
+                            return date.toLocaleDateString('es-AR', { ...options, year: 'numeric', month: '2-digit', day: '2-digit' });
+                        }
                     }
                 }
             });
@@ -708,13 +732,13 @@
         // Fetch Historical Data (1m and 1d candles)
         async function fetchBinanceData() {
             try {
-                // Fetch 1m candles for chart (1000 limit)
-                const klinesRes = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=1000');
+                // Fetch candles for chart (1000 limit)
+                const klinesRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`);
                 const klinesData = await klinesRes.json();
                 
 
 
-                // Process 1m Candles
+                // Process Candles
                 chartData = klinesData.map(d => ({
                     time: Math.floor(d[0] / 1000),
                     open: parseFloat(d[1]),
@@ -756,7 +780,14 @@
 
         // Connect WebSocket combined streams
         function connectWebsocket() {
-            const ws = new WebSocket('wss://stream.binance.com:9443/stream?streams=btcusdt@kline_1m/btcusdt@ticker');
+            if (ws) {
+                try {
+                    ws.onclose = null;
+                    ws.close();
+                } catch(e) {}
+            }
+
+            ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=btcusdt@kline_${currentInterval}/btcusdt@ticker`);
             
             ws.onopen = () => {
                 connectionText.innerText = "Conexión en vivo activa";
@@ -769,7 +800,7 @@
                 const stream = msg.stream;
                 const data = msg.data;
 
-                if (stream === "btcusdt@kline_1m") {
+                if (stream === `btcusdt@kline_${currentInterval}`) {
                     const k = data.k;
                     updateRealtimeKline(k);
                 } else if (stream === "btcusdt@ticker") {
@@ -1154,6 +1185,64 @@
             peaksCount = parseInt(e.target.value);
             labelPeaks.innerText = peaksCount;
             requestAnimationFrame(drawVPVR);
+        });
+
+        // Change candle timeframe
+        function changeInterval(newInterval) {
+            if (currentInterval === newInterval) return;
+
+            currentInterval = newInterval;
+
+            // Update active state in UI buttons
+            document.querySelectorAll('.interval-btn').forEach(btn => {
+                if (btn.getAttribute('data-interval') === newInterval) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Update UI header subtitle
+            const intervalNames = {
+                '1m': '1 Minuto (1m)',
+                '5m': '5 Minutos (5m)',
+                '15m': '15 Minutos (15m)',
+                '30m': '30 Minutos (30m)',
+                '1h': '1 Hora (1h)',
+                '4h': '4 Horas (4h)',
+                '1d': '1 Día (1d)'
+            };
+            document.querySelector('.coin-subtitle').innerText = `Intervalo: ${intervalNames[newInterval]}`;
+
+            // Clear current data
+            chartData = [];
+            ema7Data = [];
+            ema25Data = [];
+
+            // Reset Lightweight Charts series data
+            candleSeries.setData([]);
+            volumeSeries.setData([]);
+            ema7Series.setData([]);
+            ema25Series.setData([]);
+
+            // Close websocket cleanly
+            if (ws) {
+                try {
+                    ws.onclose = null;
+                    ws.close();
+                } catch(e) {}
+            }
+
+            // Re-fetch historical data and reconnect
+            fetchBinanceData();
+        }
+
+        // Add event listeners for interval buttons
+        document.querySelectorAll('.interval-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const newInterval = e.target.getAttribute('data-interval');
+                changeInterval(newInterval);
+            });
         });
 
         // Initialize script
