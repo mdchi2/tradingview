@@ -464,6 +464,34 @@
             padding: 10px;
             border-left: 3px solid var(--binance-yellow);
         }
+
+        /* SR Overlay Labels */
+        .sr-overlay-label {
+            position: absolute;
+            left: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1;
+            transform: translateY(-50%);
+            white-space: nowrap;
+            background-color: #0c0d12;
+            padding: 2px 6px 2px 0px;
+            border-radius: 2px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            user-select: none;
+            z-index: 2;
+        }
+        .sr-overlay-label.res {
+            color: #f6465d;
+        }
+        .sr-overlay-label.sop {
+            color: #0ecb81;
+        }
+        .sr-overlay-label.current {
+            font-size: 15px;
+        }
     </style>
 </head>
 <body>
@@ -474,7 +502,7 @@
             <div class="coin-icon">₿</div>
             <div class="coin-name">
                 <div class="coin-title">BTCUSDT <span>Binance Live</span></div>
-                <div class="coin-subtitle">Intervalo: 1 Minuto (1m)</div>
+                <div class="coin-subtitle">Intervalo: 1 Minuto 1m</div>
             </div>
         </div>
 
@@ -503,6 +531,7 @@
         <!-- Chart Area -->
         <div class="chart-wrapper">
             <div id="tradingview_chart"></div>
+            <div id="sr_labels_overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; overflow: hidden;"></div>
         </div>
 
         <!-- Sidebar Panel -->
@@ -580,7 +609,7 @@
                 </div>
 
                 <div class="control-row" style="margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
-                    <span class="control-label">Soporte y Resistencia</span>
+                    <span class="control-label">Sop y Res</span>
                     <label class="switch">
                         <input type="checkbox" id="toggle_sr_lines" checked>
                         <span class="slider-toggle"></span>
@@ -772,12 +801,21 @@
                 lastValueVisible: false
             });
 
+            // Event listeners for positioning overlay labels dynamically
+            chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+                updateSrOverlayLabels();
+            });
+            chart.subscribeCrosshairMove(() => {
+                updateSrOverlayLabels();
+            });
+
             // Handle Resize
             const resizeObserver = new ResizeObserver(entries => {
                 if (entries.length === 0 || !entries[0].contentRect) return;
                 const { width, height } = entries[0].contentRect;
                 if (width > 0 && height > 0) {
                     chart.resize(width, height);
+                    updateSrOverlayLabels();
                 }
             });
             resizeObserver.observe(chartDiv);
@@ -875,35 +913,86 @@
 
             if (!toggleSrLines || !toggleSrLines.checked) return;
 
-            const formatVal = (v) => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const formatVal = (v) => Math.round(v).toLocaleString('en-US');
 
             TIMEFRAMES.forEach(tf => {
                 const levels = allTfLevels[tf];
                 if (!levels || !levels.resistance || !levels.support) return;
 
                 const isCurrent = (tf === currentInterval);
+                const isNeutral = (levels.trendClass === 'neutral');
+
+                const resColor = isNeutral ? '#f0b90b' : '#f6465d';
+                const sopColor = isNeutral ? '#f0b90b' : '#0ecb81';
 
                 try {
-                    // Resistance Line (Red)
+                    // Resistance Line
                     priceLines.push(candleSeries.createPriceLine({
                         price: levels.resistance,
-                        color: '#f6465d',
-                        lineWidth: isCurrent ? 2 : 1,
-                        lineStyle: isCurrent ? 0 : 2,
-                        axisLabelVisible: true,
-                        title: `Resistencia (${tf}): $${formatVal(levels.resistance)}`
+                        color: resColor,
+                        lineWidth: isCurrent ? 1.5 : 1,
+                        lineStyle: 1,
+                        axisLabelVisible: false,
+                        title: ''
                     }));
 
-                    // Support Line (Green)
+                    // Support Line
                     priceLines.push(candleSeries.createPriceLine({
                         price: levels.support,
-                        color: '#0ecb81',
-                        lineWidth: isCurrent ? 2 : 1,
-                        lineStyle: isCurrent ? 0 : 2,
-                        axisLabelVisible: true,
-                        title: `Soporte (${tf}): $${formatVal(levels.support)}`
+                        color: sopColor,
+                        lineWidth: isCurrent ? 1.5 : 1,
+                        lineStyle: 1,
+                        axisLabelVisible: false,
+                        title: ''
                     }));
                 } catch(e) {}
+            });
+
+            updateSrOverlayLabels();
+        }
+
+        // Render transparent overlay labels on left of chart with enlarged R and S
+        function updateSrOverlayLabels() {
+            const container = document.getElementById('sr_labels_overlay');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            if (!toggleSrLines || !toggleSrLines.checked || !candleSeries) return;
+
+            const formatVal = (v) => Math.round(v).toLocaleString('en-US');
+
+            TIMEFRAMES.forEach(tf => {
+                const levels = allTfLevels[tf];
+                if (!levels || !levels.resistance || !levels.support) return;
+
+                const isCurrent = (tf === currentInterval);
+                const isNeutral = (levels.trendClass === 'neutral');
+
+                const resColor = isNeutral ? '#f0b90b' : '#f6465d';
+                const sopColor = isNeutral ? '#f0b90b' : '#0ecb81';
+
+                // Resistance Label (R)
+                const yRes = candleSeries.priceToCoordinate(levels.resistance);
+                if (yRes !== null && yRes >= 0 && yRes <= container.clientHeight) {
+                    const lblRes = document.createElement('div');
+                    lblRes.className = `sr-overlay-label ${isCurrent ? 'current' : ''}`;
+                    lblRes.style.top = `${yRes}px`;
+                    lblRes.style.color = resColor;
+                    lblRes.innerText = `R ${tf}: ${formatVal(levels.resistance)}`;
+                    container.appendChild(lblRes);
+                }
+
+                // Support Label (S)
+                const ySop = candleSeries.priceToCoordinate(levels.support);
+                if (ySop !== null && ySop >= 0 && ySop <= container.clientHeight) {
+                    const lblSop = document.createElement('div');
+                    lblSop.className = `sr-overlay-label ${isCurrent ? 'current' : ''}`;
+                    lblSop.style.top = `${ySop}px`;
+                    lblSop.style.color = sopColor;
+                    lblSop.innerText = `S ${tf}: ${formatVal(levels.support)}`;
+                    container.appendChild(lblSop);
+                }
             });
         }
 
@@ -1203,13 +1292,13 @@
             });
 
             const intervalNames = {
-                '1m': '1 Minuto (1m)',
-                '5m': '5 Minutos (5m)',
-                '15m': '15 Minutos (15m)',
-                '30m': '30 Minutos (30m)',
-                '1h': '1 Hora (1h)',
-                '4h': '4 Horas (4h)',
-                '1d': '1 Día (1d)'
+                '1m': '1 Minuto 1m',
+                '5m': '5 Minutos 5m',
+                '15m': '15 Minutos 15m',
+                '30m': '30 Minutos 30m',
+                '1h': '1 Hora 1h',
+                '4h': '4 Horas 4h',
+                '1d': '1 Día 1d'
             };
             const subtitleEl = document.querySelector('.coin-subtitle');
             if (subtitleEl) subtitleEl.innerText = `Intervalo: ${intervalNames[newInterval]}`;
