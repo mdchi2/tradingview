@@ -180,74 +180,6 @@
             backdrop-filter: blur(10px);
         }
 
-        /* Floating HUD Overlay on Chart */
-        .chart-overlay-hud {
-            position: absolute;
-            top: 14px;
-            left: 14px;
-            z-index: 30;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            pointer-events: none;
-        }
-
-        .chart-overlay-hud > * {
-            pointer-events: auto;
-        }
-
-        .hud-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(12px);
-            background: rgba(11, 14, 23, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .hud-pill.bullish {
-            color: var(--binance-green);
-            border-color: rgba(14, 203, 129, 0.4);
-            background: rgba(14, 203, 129, 0.15);
-        }
-
-        .hud-pill.bearish {
-            color: var(--binance-red);
-            border-color: rgba(246, 70, 93, 0.4);
-            background: rgba(246, 70, 93, 0.15);
-        }
-
-        .hud-pill.neutral {
-            color: var(--binance-yellow);
-            border-color: rgba(240, 185, 11, 0.4);
-            background: rgba(240, 185, 11, 0.15);
-        }
-
-        .hud-pill.long-pill {
-            color: var(--binance-green);
-            border-color: rgba(14, 203, 129, 0.4);
-            background: rgba(14, 203, 129, 0.15);
-        }
-
-        .hud-pill.short-pill {
-            color: var(--binance-red);
-            border-color: rgba(246, 70, 93, 0.4);
-            background: rgba(246, 70, 93, 0.15);
-        }
-
-        .hud-pill.rr-pill {
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--text-primary);
-        }
-
         /* Multi-Timeframe Matrix Styles */
         .tf-matrix {
             display: flex;
@@ -257,7 +189,7 @@
 
         .tf-row {
             display: grid;
-            grid-template-columns: 34px 1fr 1fr;
+            grid-template-columns: 42px 1fr;
             align-items: center;
             gap: 6px;
             padding: 6px 10px;
@@ -280,22 +212,22 @@
             color: var(--text-primary);
         }
 
-        .tf-trend, .tf-rec {
+        .tf-trend {
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 4px;
         }
 
-        .tf-trend.bullish, .tf-rec.long {
+        .tf-trend.bullish {
             color: var(--binance-green);
         }
 
-        .tf-trend.bearish, .tf-rec.short {
+        .tf-trend.bearish {
             color: var(--binance-red);
         }
 
-        .tf-trend.neutral, .tf-rec.wait {
+        .tf-trend.neutral {
             color: var(--binance-yellow);
         }
 
@@ -582,13 +514,6 @@
         <div class="chart-wrapper">
             <div id="tradingview_chart"></div>
             <canvas id="vpvr_canvas"></canvas>
-
-            <!-- Chart Floating Overlay HUD -->
-            <div class="chart-overlay-hud">
-                <div id="chart_trend_badge" class="hud-pill bullish">Tendencia: Alcista 🟢</div>
-                <div id="chart_rec_badge" class="hud-pill long-pill">Recomendación: LONG 🟢</div>
-                <div id="chart_rr_badge" class="hud-pill rr-pill">R/R 1:---</div>
-            </div>
         </div>
 
         <!-- Sidebar Panel -->
@@ -612,37 +537,30 @@
                     <div class="tf-row active" data-tf="1m">
                         <span class="tf-name">1m</span>
                         <span class="tf-trend neutral">Cargando...</span>
-                        <span class="tf-rec wait">---</span>
                     </div>
                     <div class="tf-row" data-tf="5m">
                         <span class="tf-name">5m</span>
                         <span class="tf-trend neutral">Cargando...</span>
-                        <span class="tf-rec wait">---</span>
                     </div>
                     <div class="tf-row" data-tf="15m">
                         <span class="tf-name">15m</span>
                         <span class="tf-trend neutral">Cargando...</span>
-                        <span class="tf-rec wait">---</span>
                     </div>
                     <div class="tf-row" data-tf="30m">
                         <span class="tf-name">30m</span>
                         <span class="tf-trend neutral">Cargando...</span>
-                        <span class="tf-rec wait">---</span>
                     </div>
                     <div class="tf-row" data-tf="1h">
                         <span class="tf-name">1h</span>
                         <span class="tf-trend neutral">Cargando...</span>
-                        <span class="tf-rec wait">---</span>
                     </div>
                     <div class="tf-row" data-tf="4h">
                         <span class="tf-name">4h</span>
                         <span class="tf-trend neutral">Cargando...</span>
-                        <span class="tf-rec wait">---</span>
                     </div>
                     <div class="tf-row" data-tf="1d">
                         <span class="tf-name">1d</span>
                         <span class="tf-trend neutral">Cargando...</span>
-                        <span class="tf-rec wait">---</span>
                     </div>
                 </div>
             </div>
@@ -673,7 +591,7 @@
                 </div>
 
                 <div class="control-row" style="margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
-                    <span class="control-label">Líneas S/R en Gráfico</span>
+                    <span class="control-label">Líneas TP/SL en Gráfico</span>
                     <label class="switch">
                         <input type="checkbox" id="toggle_sr_lines" checked>
                         <span class="slider-toggle"></span>
@@ -739,7 +657,6 @@
         const priceChangeEl = document.getElementById('price_change');
         const priceRangeEl = document.getElementById('price_range');
         const volume24hEl = document.getElementById('volume_24h');
-        const pocValueEl = document.getElementById('poc_value');
         const toggleEma7 = document.getElementById('toggle_ema7');
         const toggleEma25 = document.getElementById('toggle_ema25');
 
@@ -753,11 +670,8 @@
         const connectionDot = document.getElementById('connection_dot');
         const connectionText = document.getElementById('connection_text');
 
-        // Price Action & Signals DOM Elements (Floating HUD)
+        // Price Action & Signals DOM Elements
         const toggleSrLines = document.getElementById('toggle_sr_lines');
-        const chartTrendBadgeEl = document.getElementById('chart_trend_badge');
-        const chartRecBadgeEl = document.getElementById('chart_rec_badge');
-        const chartRrBadgeEl = document.getElementById('chart_rr_badge');
 
         // Global Chart variables
         let chart;
@@ -768,27 +682,52 @@
         let ws;
         let priceLines = [];
 
-
         // Global data stores
         let chartData = [];
         let ema7Data = [];
         let ema25Data = [];
         let currentInterval = '1m';
+        let allTfLevels = {}; // Stores { [tf]: { trendText, trendClass, tp, sl } }
 
-        
-        // VPVR configuration state
-        let vpvrEnabled = true;
-        let vpvrBins = 50;
-        let vpvrOpacity = 0.40;
-        let vpvrAlignment = 'left'; // 'left' or 'right'
+        const TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h', '4h', '1d'];
 
         // Canvas Setup
         const canvas = document.getElementById('vpvr_canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas ? canvas.getContext('2d') : null;
+
+        // Binance Helper Fetch with Fallbacks
+        async function fetchKlineData(interval, limit = 50) {
+            const endpoints = [
+                `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`,
+                `https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`,
+                `https://api1.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`
+            ];
+
+            for (const url of endpoints) {
+                try {
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            return data;
+                        }
+                    }
+                } catch (e) {
+                    // Try next endpoint
+                }
+            }
+            return null;
+        }
 
         // Initialize Lightweight Chart
         function initChart() {
             const chartDiv = document.getElementById('tradingview_chart');
+            if (!chartDiv || typeof LightweightCharts === 'undefined') return;
+
+            if (chart) {
+                try { chart.remove(); } catch(e) {}
+            }
+
             chart = LightweightCharts.createChart(chartDiv, {
                 layout: {
                     background: { type: 'solid', color: '#0c0d12' },
@@ -815,19 +754,19 @@
                     tickMarkFormatter: (time, tickMarkType, locale) => {
                         const date = new Date(time * 1000);
                         const options = { timeZone: 'America/Argentina/Buenos_Aires' };
-                        if (tickMarkType === 0) { // Year
+                        if (tickMarkType === 0) {
                             return date.toLocaleDateString('es-AR', { ...options, year: 'numeric' });
                         }
-                        if (tickMarkType === 1) { // Month
+                        if (tickMarkType === 1) {
                             return date.toLocaleDateString('es-AR', { ...options, month: 'short' });
                         }
-                        if (tickMarkType === 2) { // DayOfMonth
+                        if (tickMarkType === 2) {
                             return date.toLocaleDateString('es-AR', { ...options, day: 'numeric' });
                         }
-                        if (tickMarkType === 3) { // Time
+                        if (tickMarkType === 3) {
                             return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', hour12: false });
                         }
-                        if (tickMarkType === 4) { // TimeWithSeconds
+                        if (tickMarkType === 4) {
                             return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
                         }
                         return null;
@@ -874,11 +813,11 @@
             volumeSeries = chart.addHistogramSeries({
                 color: 'rgba(14, 203, 129, 0.2)',
                 priceFormat: { type: 'volume' },
-                priceScaleId: '', // overlay
+                priceScaleId: '',
             });
             volumeSeries.priceScale().applyOptions({
                 scaleMargins: {
-                    top: 0.8, // Vol occupies bottom 20% of chart
+                    top: 0.8,
                     bottom: 0
                 }
             });
@@ -907,16 +846,26 @@
             const resizeObserver = new ResizeObserver(entries => {
                 if (entries.length === 0 || !entries[0].contentRect) return;
                 const { width, height } = entries[0].contentRect;
-                chart.resize(width, height);
-                resizeCanvas();
+                if (width > 0 && height > 0) {
+                    chart.resize(width, height);
+                    resizeCanvas();
+                }
             });
             resizeObserver.observe(chartDiv);
+
+            // Initial sizing
+            const rect = chartDiv.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                chart.resize(rect.width, rect.height);
+            }
             resizeCanvas();
         }
 
         // Handle Canvas overlay resize
         function resizeCanvas() {
+            if (!canvas || !ctx) return;
             const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
             canvas.width = rect.width * window.devicePixelRatio;
             canvas.height = rect.height * window.devicePixelRatio;
             ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
@@ -925,221 +874,199 @@
 
         // Calculate EMA
         function calculateEMA(data, length) {
+            if (!data || data.length === 0) return [];
             const ema = [];
             const k = 2 / (length + 1);
             let prevEma = data[0].close;
-            ema.push({ time: data[0].time, value: prevEma });
+            const t0 = data[0].time !== undefined ? data[0].time : 0;
+            ema.push({ time: t0, value: prevEma });
 
             for (let i = 1; i < data.length; i++) {
                 const val = data[i].close * k + prevEma * (1 - k);
-                ema.push({ time: data[i].time, value: val });
+                const t = data[i].time !== undefined ? data[i].time : i;
+                ema.push({ time: t, value: val });
                 prevEma = val;
             }
             return ema;
         }
 
-        // Update Price Action Analysis & Trading Signals (Floating Chart HUD)
-        function updatePriceActionAnalysis() {
-            if (!chartData || chartData.length < 25) return;
+        // Calculate Take Profit and Stop Loss levels for a specific timeframe's candle data
+        function calculateTfLevels(candles) {
+            if (!candles || candles.length < 25) return null;
 
-            const lastIdx = chartData.length - 1;
-            const currentClose = chartData[lastIdx].close;
-            const lastEma7 = ema7Data[lastIdx] ? ema7Data[lastIdx].value : currentClose;
-            const lastEma25 = ema25Data[lastIdx] ? ema25Data[lastIdx].value : currentClose;
+            const lastIdx = candles.length - 1;
+            const currentClose = candles[lastIdx].close;
+            const ema7 = calculateEMA(candles, 7);
+            const ema25 = calculateEMA(candles, 25);
+            const lastEma7 = ema7[lastIdx] ? ema7[lastIdx].value : currentClose;
+            const lastEma25 = ema25[lastIdx] ? ema25[lastIdx].value : currentClose;
 
-            // Detect Swing Highs and Swing Lows for Scalping (lookback: 60 candles)
-            const lookback = Math.min(60, chartData.length - 2);
-            const startIdx = chartData.length - lookback;
+            // Detect Swing Highs and Swing Lows
+            const lookback = Math.min(60, candles.length - 2);
+            const startIdx = candles.length - lookback;
             const swingHighs = [];
             const swingLows = [];
 
-            for (let i = startIdx; i < chartData.length - 2; i++) {
-                const high = chartData[i].high;
-                const low = chartData[i].low;
+            for (let i = startIdx; i < candles.length - 2; i++) {
+                const high = candles[i].high;
+                const low = candles[i].low;
 
-                if (high > chartData[i-1].high && high > chartData[i-2].high && high > chartData[i+1].high && high > chartData[i+2].high) {
+                if (high > candles[i-1].high && high > candles[i-2].high && high > candles[i+1].high && high > candles[i+2].high) {
                     swingHighs.push(high);
                 }
-                if (low < chartData[i-1].low && low < chartData[i-2].low && low < chartData[i+1].low && low < chartData[i+2].low) {
+                if (low < candles[i-1].low && low < candles[i-2].low && low < candles[i+1].low && low < candles[i+2].low) {
                     swingLows.push(low);
                 }
             }
 
-            // Filter micro resistances and supports
             let resistances = swingHighs.filter(h => h > currentClose).sort((a, b) => a - b);
             let supports = swingLows.filter(l => l < currentClose).sort((a, b) => b - a);
 
             const r1 = resistances[0] || currentClose * 1.004;
             const s1 = supports[0] || currentClose * 0.996;
 
-            // Determine Trend State & Scalping Strategy Direction
             let isBullish = false;
+            let trendText = "Consolidación 🟡";
+            let trendClass = "neutral";
+
             if (currentClose > lastEma7 && lastEma7 > lastEma25) {
-                chartTrendBadgeEl.innerText = "Tendencia: Alcista 🟢";
-                chartTrendBadgeEl.className = "hud-pill bullish";
+                trendText = "Alcista 🟢";
+                trendClass = "bullish";
                 isBullish = true;
             } else if (currentClose < lastEma7 && lastEma7 < lastEma25) {
-                chartTrendBadgeEl.innerText = "Tendencia: Bajista 🔴";
-                chartTrendBadgeEl.className = "hud-pill bearish";
+                trendText = "Bajista 🔴";
+                trendClass = "bearish";
                 isBullish = false;
             } else {
-                chartTrendBadgeEl.innerText = "Tendencia: Consolidación 🟡";
-                chartTrendBadgeEl.className = "hud-pill neutral";
+                trendText = "Consolidación 🟡";
+                trendClass = "neutral";
                 isBullish = (currentClose - s1) < (r1 - currentClose);
             }
 
-            let entry, sl, tp, risk, reward, ratio;
-
+            let sl, tp;
             if (isBullish) {
-                chartRecBadgeEl.innerText = "Recomendación: LONG 🟢";
-                chartRecBadgeEl.className = "hud-pill long-pill";
-
-                // Scalping Long Strategy: Entry near S1, SL tight below S1 (0.25%), single TP near R1 (0.50%)
-                entry = s1;
                 sl = s1 * 0.9975;
-                tp = Math.max(entry * 1.004, r1 * 0.999);
-                risk = entry - sl;
-                reward = tp - entry;
-                ratio = risk > 0 ? (reward / risk).toFixed(1) : "2.0";
+                tp = Math.max(s1 * 1.004, r1 * 0.999);
             } else {
-                chartRecBadgeEl.innerText = "Recomendación: SHORT 🔴";
-                chartRecBadgeEl.className = "hud-pill short-pill";
-
-                // Scalping Short Strategy: Entry near R1, SL tight above R1 (0.25%), single TP near S1 (0.50%)
-                entry = r1;
                 sl = r1 * 1.0025;
-                tp = Math.min(entry * 0.996, s1 * 1.001);
-                risk = sl - entry;
-                reward = entry - tp;
-                ratio = risk > 0 ? (reward / risk).toFixed(1) : "2.0";
+                tp = Math.min(r1 * 0.996, s1 * 1.001);
             }
 
-            chartRrBadgeEl.innerText = `R/R 1:${ratio}`;
-
-            // Render Scalping Trading Lines (ENTRADA, STOP LOSS, TAKE PROFIT) directly on TradingView Chart
-            priceLines.forEach(l => candleSeries.removePriceLine(l));
-            priceLines = [];
-
-            if (toggleSrLines.checked) {
-                const formatVal = (v) => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                
-                // Entrada (Binance Yellow Dashed)
-                priceLines.push(candleSeries.createPriceLine({
-                    price: entry,
-                    color: '#f0b90b',
-                    lineWidth: 1.5,
-                    lineStyle: 2, // Dashed
-                    axisLabelVisible: true,
-                    title: `ENTRADA: $${formatVal(entry)}`
-                }));
-
-                // Stop Loss (Binance Red Solid)
-                priceLines.push(candleSeries.createPriceLine({
-                    price: sl,
-                    color: '#f6465d',
-                    lineWidth: 2,
-                    lineStyle: 0, // Solid
-                    axisLabelVisible: true,
-                    title: `STOP LOSS: $${formatVal(sl)}`
-                }));
-
-                // Take Profit (Binance Green Solid - Single TP)
-                priceLines.push(candleSeries.createPriceLine({
-                    price: tp,
-                    color: '#0ecb81',
-                    lineWidth: 2,
-                    lineStyle: 0, // Solid
-                    axisLabelVisible: true,
-                    title: `TAKE PROFIT: $${formatVal(tp)}`
-                }));
-            }
+            return { trendText, trendClass, sl, tp };
         }
 
-        // Fetch and update Trend & Recommendation matrix for ALL timeframes (1m, 5m, 15m, 30m, 1h, 4h, 1d)
-        const TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h', '4h', '1d'];
+        // Render Take Profit and Stop Loss lines for ALL timeframes on chart
+        function renderAllTimeframePriceLines() {
+            if (!candleSeries) return;
+
+            // Remove existing lines
+            priceLines.forEach(l => {
+                try { candleSeries.removePriceLine(l); } catch(e) {}
+            });
+            priceLines = [];
+
+            if (!toggleSrLines || !toggleSrLines.checked) return;
+
+            const formatVal = (v) => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            TIMEFRAMES.forEach(tf => {
+                const levels = allTfLevels[tf];
+                if (!levels || !levels.tp || !levels.sl) return;
+
+                const isCurrent = (tf === currentInterval);
+
+                try {
+                    // Take Profit Line
+                    priceLines.push(candleSeries.createPriceLine({
+                        price: levels.tp,
+                        color: '#0ecb81',
+                        lineWidth: isCurrent ? 2 : 1,
+                        lineStyle: isCurrent ? 0 : 2,
+                        axisLabelVisible: true,
+                        title: `TP (${tf}): $${formatVal(levels.tp)}`
+                    }));
+
+                    // Stop Loss Line
+                    priceLines.push(candleSeries.createPriceLine({
+                        price: levels.sl,
+                        color: '#f6465d',
+                        lineWidth: isCurrent ? 2 : 1,
+                        lineStyle: isCurrent ? 0 : 2,
+                        axisLabelVisible: true,
+                        title: `SL (${tf}): $${formatVal(levels.sl)}`
+                    }));
+                } catch(e) {}
+            });
+        }
+
+        // Update Price Action Analysis for active chart & render lines
+        function updatePriceActionAnalysis() {
+            if (!chartData || chartData.length < 25) return;
+
+            const currentLevels = calculateTfLevels(chartData);
+            if (currentLevels) {
+                allTfLevels[currentInterval] = currentLevels;
+            }
+
+            renderAllTimeframePriceLines();
+        }
+
+        // Fetch and update Trend analysis & TP/SL for ALL timeframes
         async function updateMultiTimeframeAnalysis() {
             try {
-                const fetchPromises = TIMEFRAMES.map(tf => 
-                    fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${tf}&limit=50`)
-                        .then(r => r.json())
-                        .then(data => ({ tf, data }))
-                        .catch(() => ({ tf, data: null }))
-                );
+                const fetchPromises = TIMEFRAMES.map(async tf => {
+                    const data = await fetchKlineData(tf, 60);
+                    return { tf, data };
+                });
 
                 const results = await Promise.all(fetchPromises);
 
                 results.forEach(({ tf, data }) => {
-                    if (!data || data.length < 25) return;
+                    if (!data || !Array.isArray(data) || data.length < 25) return;
 
                     const candles = data.map(d => ({
-                        close: parseFloat(d[4]),
+                        open: parseFloat(d[1]),
                         high: parseFloat(d[2]),
-                        low: parseFloat(d[3])
+                        low: parseFloat(d[3]),
+                        close: parseFloat(d[4])
                     }));
 
-                    const ema7 = calculateEMA(candles, 7);
-                    const ema25 = calculateEMA(candles, 25);
-                    const lastIdx = candles.length - 1;
-                    const close = candles[lastIdx].close;
-                    const e7 = ema7[lastIdx].value;
-                    const e25 = ema25[lastIdx].value;
+                    const res = calculateTfLevels(candles);
+                    if (res) {
+                        allTfLevels[tf] = res;
 
-                    let trendText = "Rango 🟡";
-                    let trendClass = "neutral";
-                    let recText = "LONG 🟢";
-                    let recClass = "long";
-
-                    if (close > e7 && e7 > e25) {
-                        trendText = "Alcista 🟢";
-                        trendClass = "bullish";
-                        recText = "LONG 🟢";
-                        recClass = "long";
-                    } else if (close < e7 && e7 < e25) {
-                        trendText = "Bajista 🔴";
-                        trendClass = "bearish";
-                        recText = "SHORT 🔴";
-                        recClass = "short";
-                    } else {
-                        if (close > e25) {
-                            trendText = "Alcista 🟢";
-                            trendClass = "bullish";
-                            recText = "LONG 🟢";
-                            recClass = "long";
-                        } else {
-                            trendText = "Bajista 🔴";
-                            trendClass = "bearish";
-                            recText = "SHORT 🔴";
-                            recClass = "short";
-                        }
-                    }
-
-                    // Update UI row for this tf
-                    const row = document.querySelector(`.tf-row[data-tf="${tf}"]`);
-                    if (row) {
-                        const trendEl = row.querySelector('.tf-trend');
-                        const recEl = row.querySelector('.tf-rec');
-                        if (trendEl) {
-                            trendEl.innerText = trendText;
-                            trendEl.className = `tf-trend ${trendClass}`;
-                        }
-                        if (recEl) {
-                            recEl.innerText = recText;
-                            recEl.className = `tf-rec ${recClass}`;
+                        // Update UI row for this tf
+                        const row = document.querySelector(`.tf-row[data-tf="${tf}"]`);
+                        if (row) {
+                            const trendEl = row.querySelector('.tf-trend');
+                            if (trendEl) {
+                                trendEl.innerText = res.trendText;
+                                trendEl.className = `tf-trend ${res.trendClass}`;
+                            }
                         }
                     }
                 });
+
+                if (chartData && chartData.length >= 25) {
+                    const resCurrent = calculateTfLevels(chartData);
+                    if (resCurrent) {
+                        allTfLevels[currentInterval] = resCurrent;
+                    }
+                }
+
+                renderAllTimeframePriceLines();
             } catch (err) {
                 console.error("Error updating multi-timeframe analysis:", err);
             }
         }
 
-        // Fetch Historical Data (1m and 1d candles)
+        // Fetch Historical Data for active timeframe
         async function fetchBinanceData() {
             try {
-                // Fetch candles for chart (1000 limit)
-                const klinesRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`);
-                const klinesData = await klinesRes.json();
-                
+                const klinesData = await fetchKlineData(currentInterval, 1000);
+                if (!klinesData || !Array.isArray(klinesData)) {
+                    throw new Error("No se pudieron obtener datos de klines.");
+                }
 
                 // Process Candles
                 chartData = klinesData.map(d => ({
@@ -1174,13 +1101,13 @@
 
             } catch (err) {
                 console.error("Error fetching Binance data: ", err);
-                connectionText.innerText = "Error cargando datos de Binance.";
-                connectionDot.style.backgroundColor = "var(--binance-red)";
-                connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+                if (connectionText && connectionDot) {
+                    connectionText.innerText = "Error cargando datos de Binance.";
+                    connectionDot.style.backgroundColor = "var(--binance-red)";
+                    connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+                }
             }
         }
-
-
 
         // Connect WebSocket combined streams
         function connectWebsocket() {
@@ -1194,9 +1121,11 @@
             ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=btcusdt@kline_${currentInterval}/btcusdt@ticker`);
             
             ws.onopen = () => {
-                connectionText.innerText = "Conexión en vivo activa";
-                connectionDot.style.backgroundColor = "var(--binance-green)";
-                connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+                if (connectionText && connectionDot) {
+                    connectionText.innerText = "Conexión en vivo activa";
+                    connectionDot.style.backgroundColor = "var(--binance-green)";
+                    connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+                }
             };
 
             ws.onmessage = (event) => {
@@ -1217,9 +1146,11 @@
             };
 
             ws.onclose = () => {
-                connectionText.innerText = "Desconectado. Reintentando...";
-                connectionDot.style.backgroundColor = "var(--binance-red)";
-                connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+                if (connectionText && connectionDot) {
+                    connectionText.innerText = "Desconectado. Reintentando...";
+                    connectionDot.style.backgroundColor = "var(--binance-red)";
+                    connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+                }
                 setTimeout(connectWebsocket, 5000);
             };
         }
@@ -1227,45 +1158,45 @@
         // Update real-time statistics in header
         let lastPrice = 0;
         function updateHeaderStats(tick) {
+            if (!tick) return;
             const price = parseFloat(tick.c);
             
-            // Format live price
-            livePriceEl.innerText = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            
-            // Animate live price color update based on tick direction
-            if (lastPrice !== 0 && price !== lastPrice) {
-                if (price > lastPrice) {
-                    livePriceEl.className = "stat-value price up";
-                    livePriceEl.style.textShadow = "0 0 10px rgba(14, 203, 129, 0.4)";
-                } else {
-                    livePriceEl.className = "stat-value price down";
-                    livePriceEl.style.textShadow = "0 0 10px rgba(246, 70, 93, 0.4)";
+            if (livePriceEl) {
+                livePriceEl.innerText = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (lastPrice !== 0 && price !== lastPrice) {
+                    if (price > lastPrice) {
+                        livePriceEl.className = "stat-value price up";
+                        livePriceEl.style.textShadow = "0 0 10px rgba(14, 203, 129, 0.4)";
+                    } else {
+                        livePriceEl.className = "stat-value price down";
+                        livePriceEl.style.textShadow = "0 0 10px rgba(246, 70, 93, 0.4)";
+                    }
                 }
+                setTimeout(() => { livePriceEl.style.textShadow = "none"; }, 200);
             }
             lastPrice = price;
 
-            // Reset text shadow after 200ms
-            setTimeout(() => {
-                livePriceEl.style.textShadow = "none";
-            }, 200);
+            if (priceChangeEl) {
+                const changePercent = parseFloat(tick.P);
+                priceChangeEl.innerText = (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%";
+                priceChangeEl.className = "stat-value " + (changePercent >= 0 ? "up" : "down");
+            }
 
-            // Format 24h change
-            const changePercent = parseFloat(tick.P);
-            priceChangeEl.innerText = (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%";
-            priceChangeEl.className = "stat-value " + (changePercent >= 0 ? "up" : "down");
+            if (priceRangeEl) {
+                const high = parseFloat(tick.h).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                const low = parseFloat(tick.l).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                priceRangeEl.innerText = `${high} / ${low}`;
+            }
 
-            // Format high/low
-            const high = parseFloat(tick.h).toLocaleString('en-US', { maximumFractionDigits: 0 });
-            const low = parseFloat(tick.l).toLocaleString('en-US', { maximumFractionDigits: 0 });
-            priceRangeEl.innerText = `${high} / ${low}`;
-
-            // Format 24h Volume (USDT in Millions)
-            const quoteVolume = parseFloat(tick.q) / 1000000;
-            volume24hEl.innerText = quoteVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " M";
+            if (volume24hEl) {
+                const quoteVolume = parseFloat(tick.q) / 1000000;
+                volume24hEl.innerText = quoteVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " M";
+            }
         }
 
         // Handle kline websocket updates
         function updateRealtimeKline(k) {
+            if (!k) return;
             const time = Math.floor(k.t / 1000);
             const candle = {
                 time: time,
@@ -1278,29 +1209,26 @@
 
             const lastIdx = chartData.length - 1;
             if (lastIdx >= 0 && chartData[lastIdx].time === time) {
-                // Update current candle
                 chartData[lastIdx] = candle;
 
                 const k7 = 2 / (7 + 1);
-                const prevEma7 = ema7Data[lastIdx - 1].value;
+                const prevEma7 = ema7Data[lastIdx - 1] ? ema7Data[lastIdx - 1].value : candle.close;
                 ema7Data[lastIdx] = { time: time, value: candle.close * k7 + prevEma7 * (1 - k7) };
 
                 const k25 = 2 / (25 + 1);
-                const prevEma25 = ema25Data[lastIdx - 1].value;
+                const prevEma25 = ema25Data[lastIdx - 1] ? ema25Data[lastIdx - 1].value : candle.close;
                 ema25Data[lastIdx] = { time: time, value: candle.close * k25 + prevEma25 * (1 - k25) };
             } else {
-                // Insert new candle
                 chartData.push(candle);
 
                 const k7 = 2 / (7 + 1);
-                const prevEma7 = ema7Data[lastIdx].value;
+                const prevEma7 = ema7Data[lastIdx] ? ema7Data[lastIdx].value : candle.close;
                 ema7Data.push({ time: time, value: candle.close * k7 + prevEma7 * (1 - k7) });
 
                 const k25 = 2 / (25 + 1);
-                const prevEma25 = ema25Data[lastIdx].value;
+                const prevEma25 = ema25Data[lastIdx] ? ema25Data[lastIdx].value : candle.close;
                 ema25Data.push({ time: time, value: candle.close * k25 + prevEma25 * (1 - k25) });
 
-                // Keep memory clean
                 if (chartData.length > 1200) {
                     chartData.shift();
                     ema7Data.shift();
@@ -1308,18 +1236,19 @@
                 }
             }
 
-            // Update series
-            candleSeries.update(candle);
-            volumeSeries.update({
-                time: candle.time,
-                value: candle.volume,
-                color: candle.close >= candle.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
-            });
+            if (candleSeries) candleSeries.update(candle);
+            if (volumeSeries) {
+                volumeSeries.update({
+                    time: candle.time,
+                    value: candle.volume,
+                    color: candle.close >= candle.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
+                });
+            }
 
-            if (toggleEma7.checked) {
+            if (toggleEma7 && toggleEma7.checked && ema7Series && ema7Data.length > 0) {
                 ema7Series.update(ema7Data[ema7Data.length - 1]);
             }
-            if (toggleEma25.checked) {
+            if (toggleEma25 && toggleEma25.checked && ema25Series && ema25Data.length > 0) {
                 ema25Series.update(ema25Data[ema25Data.length - 1]);
             }
 
@@ -1329,19 +1258,17 @@
 
         // Draw Volume Profile Overlay (VPVR)
         function drawVPVR() {
-            // Get client rect bounds
+            if (!canvas || !ctx) return;
             const rect = canvas.getBoundingClientRect();
             const width = rect.width;
             const height = rect.height;
 
             ctx.clearRect(0, 0, width, height);
 
-            if (!vpvrEnabled || chartData.length === 0) {
-                pocValueEl.innerText = "---.--";
+            if (!vpvrEnabled || chartData.length === 0 || !chart || !candleSeries) {
                 return;
             }
 
-            // Get range of visible data indices
             const logicalRange = chart.timeScale().getVisibleLogicalRange();
             if (!logicalRange) return;
 
@@ -1357,7 +1284,6 @@
 
             if (visibleData.length === 0) return;
 
-            // Find min/max price in visible data
             let minPrice = Infinity;
             let maxPrice = -Infinity;
             for (const d of visibleData) {
@@ -1367,7 +1293,6 @@
 
             if (minPrice === Infinity || maxPrice === -Infinity) return;
 
-            // Compute bins
             const step = (maxPrice - minPrice) / vpvrBins;
             const buyBins = Array(vpvrBins).fill(0);
             const sellBins = Array(vpvrBins).fill(0);
@@ -1378,7 +1303,6 @@
                 const highBin = Math.floor((d.high - minPrice) / step);
                 const rangeSpan = Math.max(1, highBin - lowBin + 1);
                 
-                // Distribute volume equally across all bins overlap
                 const volShare = d.volume / rangeSpan;
                 const isUp = d.close >= d.open;
 
@@ -1392,7 +1316,6 @@
                 }
             }
 
-            // Calculate max volume for relative bin bar scaling
             let maxVol = 0;
             for (let i = 0; i < vpvrBins; i++) {
                 if (totalBins[i] > maxVol) {
@@ -1400,20 +1323,16 @@
                 }
             }
 
-            // Max bar width in pixels (25% of total chart pane width)
             const chartPaneWidth = width - 80;
             const maxBarWidth = chartPaneWidth * 0.25;
 
-            // Draw bars
             for (let i = 0; i < vpvrBins; i++) {
                 const totalVal = totalBins[i];
                 if (totalVal === 0) continue;
 
-                // Price levels of this bin
                 const priceStart = minPrice + i * step;
                 const priceEnd = priceStart + step;
 
-                // Convert price to Y coordinates on the chart
                 const yStart = candleSeries.priceToCoordinate(priceStart);
                 const yEnd = candleSeries.priceToCoordinate(priceEnd);
 
@@ -1421,96 +1340,93 @@
 
                 const yTop = Math.min(yStart, yEnd);
                 const yBottom = Math.max(yStart, yEnd);
-                const barHeight = Math.max(1, yBottom - yTop - 0.5); // Subtract margin
+                const barHeight = Math.max(1, yBottom - yTop - 0.5);
 
-                // Skip drawing if outside chart display area
                 if (yTop < 0 || yBottom > height - 26) continue;
 
-                // Bar sizing
                 const barWidth = (totalVal / maxVol) * maxBarWidth;
                 const buyWidth = (buyBins[i] / totalVal) * barWidth;
                 const sellWidth = (sellBins[i] / totalVal) * barWidth;
 
-                // Compute horizontal drawing coordinate
                 let xStart = 0;
                 if (vpvrAlignment === 'right') {
                     xStart = chartPaneWidth - barWidth;
                 }
 
-                // Draw Buy volume (semi-transparent green)
                 ctx.fillStyle = `rgba(14, 203, 129, ${vpvrOpacity})`;
-                ctx.fillRect(
-                    xStart, 
-                    yTop, 
-                    buyWidth, 
-                    barHeight
-                );
+                ctx.fillRect(xStart, yTop, buyWidth, barHeight);
 
-                // Draw Sell volume (semi-transparent red)
                 ctx.fillStyle = `rgba(246, 70, 93, ${vpvrOpacity})`;
-                ctx.fillRect(
-                    xStart + buyWidth, 
-                    yTop, 
-                    sellWidth, 
-                    barHeight
-                );
+                ctx.fillRect(xStart + buyWidth, yTop, sellWidth, barHeight);
             }
         }
 
         // Toggle Switch & Slider Listeners
-        toggleEma7.addEventListener('change', () => {
-            if (toggleEma7.checked) {
-                ema7Series.setData(ema7Data);
-            } else {
-                ema7Series.setData([]);
-            }
-        });
+        if (toggleEma7) {
+            toggleEma7.addEventListener('change', () => {
+                if (toggleEma7.checked) {
+                    ema7Series.setData(ema7Data);
+                } else {
+                    ema7Series.setData([]);
+                }
+            });
+        }
 
-        toggleEma25.addEventListener('change', () => {
-            if (toggleEma25.checked) {
-                ema25Series.setData(ema25Data);
-            } else {
-                ema25Series.setData([]);
-            }
-        });
+        if (toggleEma25) {
+            toggleEma25.addEventListener('change', () => {
+                if (toggleEma25.checked) {
+                    ema25Series.setData(ema25Data);
+                } else {
+                    ema25Series.setData([]);
+                }
+            });
+        }
 
+        if (toggleVpvr) {
+            toggleVpvr.addEventListener('change', () => {
+                vpvrEnabled = toggleVpvr.checked;
+                requestAnimationFrame(drawVPVR);
+            });
+        }
 
+        if (sliderBins) {
+            sliderBins.addEventListener('input', (e) => {
+                vpvrBins = parseInt(e.target.value);
+                if (labelBins) labelBins.innerText = vpvrBins;
+                requestAnimationFrame(drawVPVR);
+            });
+        }
 
-        toggleVpvr.addEventListener('change', () => {
-            vpvrEnabled = toggleVpvr.checked;
-            requestAnimationFrame(drawVPVR);
-        });
+        if (sliderOpacity) {
+            sliderOpacity.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                vpvrOpacity = val / 100;
+                if (labelOpacity) labelOpacity.innerText = val + "%";
+                requestAnimationFrame(drawVPVR);
+            });
+        }
 
-        sliderBins.addEventListener('input', (e) => {
-            vpvrBins = parseInt(e.target.value);
-            labelBins.innerText = vpvrBins;
-            requestAnimationFrame(drawVPVR);
-        });
+        if (alignLeftBtn && alignRightBtn) {
+            alignLeftBtn.addEventListener('click', () => {
+                vpvrAlignment = 'left';
+                alignLeftBtn.classList.add('active');
+                alignRightBtn.classList.remove('active');
+                requestAnimationFrame(drawVPVR);
+            });
 
-        sliderOpacity.addEventListener('input', (e) => {
-            const val = parseInt(e.target.value);
-            vpvrOpacity = val / 100;
-            labelOpacity.innerText = val + "%";
-            requestAnimationFrame(drawVPVR);
-        });
+            alignRightBtn.addEventListener('click', () => {
+                vpvrAlignment = 'right';
+                alignRightBtn.classList.add('active');
+                alignLeftBtn.classList.remove('active');
+                requestAnimationFrame(drawVPVR);
+            });
+        }
 
-        alignLeftBtn.addEventListener('click', () => {
-            vpvrAlignment = 'left';
-            alignLeftBtn.classList.add('active');
-            alignRightBtn.classList.remove('active');
-            requestAnimationFrame(drawVPVR);
-        });
-
-        alignRightBtn.addEventListener('click', () => {
-            vpvrAlignment = 'right';
-            alignRightBtn.classList.add('active');
-            alignLeftBtn.classList.remove('active');
-            requestAnimationFrame(drawVPVR);
-        });
-
-        toggleSrLines.addEventListener('change', () => {
-            updatePriceActionAnalysis();
-        });
+        if (toggleSrLines) {
+            toggleSrLines.addEventListener('change', () => {
+                updatePriceActionAnalysis();
+            });
+        }
 
         // Change candle timeframe
         function changeInterval(newInterval) {
@@ -1518,7 +1434,6 @@
 
             currentInterval = newInterval;
 
-            // Update active state in UI buttons & matrix rows
             document.querySelectorAll('.interval-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('data-interval') === newInterval);
             });
@@ -1526,7 +1441,6 @@
                 row.classList.toggle('active', row.getAttribute('data-tf') === newInterval);
             });
 
-            // Update UI header subtitle
             const intervalNames = {
                 '1m': '1 Minuto (1m)',
                 '5m': '5 Minutos (5m)',
@@ -1536,20 +1450,18 @@
                 '4h': '4 Horas (4h)',
                 '1d': '1 Día (1d)'
             };
-            document.querySelector('.coin-subtitle').innerText = `Intervalo: ${intervalNames[newInterval]}`;
+            const subtitleEl = document.querySelector('.coin-subtitle');
+            if (subtitleEl) subtitleEl.innerText = `Intervalo: ${intervalNames[newInterval]}`;
 
-            // Clear current data
             chartData = [];
             ema7Data = [];
             ema25Data = [];
 
-            // Reset Lightweight Charts series data
-            candleSeries.setData([]);
-            volumeSeries.setData([]);
-            ema7Series.setData([]);
-            ema25Series.setData([]);
+            if (candleSeries) candleSeries.setData([]);
+            if (volumeSeries) volumeSeries.setData([]);
+            if (ema7Series) ema7Series.setData([]);
+            if (ema25Series) ema25Series.setData([]);
 
-            // Close websocket cleanly
             if (ws) {
                 try {
                     ws.onclose = null;
@@ -1557,11 +1469,9 @@
                 } catch(e) {}
             }
 
-            // Re-fetch historical data and reconnect
             fetchBinanceData();
         }
 
-        // Add event listeners for interval buttons
         document.querySelectorAll('.interval-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const newInterval = e.target.getAttribute('data-interval');
@@ -1569,7 +1479,6 @@
             });
         });
 
-        // Add event listeners for multi-timeframe matrix rows
         document.querySelectorAll('.tf-row').forEach(row => {
             row.addEventListener('click', () => {
                 const newInterval = row.getAttribute('data-tf');
@@ -1577,13 +1486,19 @@
             });
         });
 
-        // Initialize script
-        window.addEventListener('DOMContentLoaded', () => {
+        // Initialize App function with immediate state check
+        function startApp() {
             initChart();
             fetchBinanceData();
             updateMultiTimeframeAnalysis();
             setInterval(updateMultiTimeframeAnalysis, 20000);
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
     </script>
 </body>
 </html>
