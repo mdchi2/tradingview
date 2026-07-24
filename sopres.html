@@ -920,10 +920,10 @@
                 if (!levels || !levels.resistance || !levels.support) return;
 
                 const isCurrent = (tf === currentInterval);
-                const isNeutral = (levels.trendClass === 'neutral');
+                const tfTrendColor = levels.trendClass === 'bullish' ? '#0ecb81' : (levels.trendClass === 'bearish' ? '#f6465d' : '#f0b90b');
 
-                const resColor = isNeutral ? '#f0b90b' : '#f6465d';
-                const sopColor = isNeutral ? '#f0b90b' : '#0ecb81';
+                const resColor = tfTrendColor;
+                const sopColor = tfTrendColor;
 
                 try {
                     // Resistance Line
@@ -967,10 +967,10 @@
                 if (!levels || !levels.resistance || !levels.support) return;
 
                 const isCurrent = (tf === currentInterval);
-                const isNeutral = (levels.trendClass === 'neutral');
+                const tfTrendColor = levels.trendClass === 'bullish' ? '#0ecb81' : (levels.trendClass === 'bearish' ? '#f6465d' : '#f0b90b');
 
-                const resColor = isNeutral ? '#f0b90b' : '#f6465d';
-                const sopColor = isNeutral ? '#f0b90b' : '#0ecb81';
+                const resColor = tfTrendColor;
+                const sopColor = tfTrendColor;
 
                 // Resistance Label (R)
                 const yRes = candleSeries.priceToCoordinate(levels.resistance);
