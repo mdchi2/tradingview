@@ -484,13 +484,67 @@
             z-index: 2;
         }
         .sr-overlay-label.res {
-            color: #f6465d;
+            color: #38bdf8;
         }
         .sr-overlay-label.sop {
-            color: #0ecb81;
+            color: #38bdf8;
         }
         .sr-overlay-label.current {
             font-size: 15px;
+            font-weight: 800;
+        }
+
+        /* Chart Horizontal Timeframe Analysis Bar */
+        .tf-chart-bar {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .tf-chart-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .tf-chart-badge.bullish {
+            background-color: var(--binance-green);
+            color: #080a0f;
+            border-color: var(--binance-green);
+        }
+
+        .tf-chart-badge.bearish {
+            background-color: var(--binance-red);
+            color: #ffffff;
+            border-color: var(--binance-red);
+        }
+
+        .tf-chart-badge.neutral {
+            background-color: var(--binance-yellow);
+            color: #080a0f;
+            border-color: var(--binance-yellow);
+        }
+
+        .tf-chart-badge.active {
+            outline: 2px solid #ffffff;
+            outline-offset: 1px;
         }
     </style>
 </head>
@@ -531,6 +585,15 @@
         <!-- Chart Area -->
         <div class="chart-wrapper">
             <div id="tradingview_chart"></div>
+            <div class="tf-chart-bar" id="tf_chart_bar">
+                <div class="tf-chart-badge neutral active" data-tf="1m">1m</div>
+                <div class="tf-chart-badge neutral" data-tf="5m">5m</div>
+                <div class="tf-chart-badge neutral" data-tf="15m">15m</div>
+                <div class="tf-chart-badge neutral" data-tf="30m">30m</div>
+                <div class="tf-chart-badge neutral" data-tf="1h">1h</div>
+                <div class="tf-chart-badge neutral" data-tf="4h">4h</div>
+                <div class="tf-chart-badge neutral" data-tf="1d">1d</div>
+            </div>
             <div id="sr_labels_overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; overflow: hidden;"></div>
         </div>
 
@@ -609,7 +672,10 @@
                 </div>
 
                 <div class="control-row" style="margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
-                    <span class="control-label">Sop y Res</span>
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #38bdf8;"></span>
+                        Sop y Res
+                    </span>
                     <label class="switch">
                         <input type="checkbox" id="toggle_sr_lines" checked>
                         <span class="slider-toggle"></span>
@@ -901,6 +967,19 @@
             return { trendText, trendClass, support: s1, resistance: r1 };
         }
 
+        // Timeframe line width mapping (increases as timeframe increases)
+        const TF_LINE_WIDTHS = {
+            '1m': 1,
+            '5m': 1,
+            '15m': 2,
+            '30m': 2,
+            '1h': 2,
+            '4h': 3,
+            '1d': 3
+        };
+
+        const SR_CELESTE_COLOR = '#38bdf8'; // Celeste color for lines and text
+
         // Render Support and Resistance lines for ALL timeframes on chart
         function renderAllTimeframePriceLines() {
             if (!candleSeries) return;
@@ -919,19 +998,15 @@
                 const levels = allTfLevels[tf];
                 if (!levels || !levels.resistance || !levels.support) return;
 
-                const isCurrent = (tf === currentInterval);
-                const tfTrendColor = levels.trendClass === 'bullish' ? '#0ecb81' : (levels.trendClass === 'bearish' ? '#f6465d' : '#f0b90b');
-
-                const resColor = tfTrendColor;
-                const sopColor = tfTrendColor;
+                const lineWidth = TF_LINE_WIDTHS[tf] || 1;
 
                 try {
                     // Resistance Line
                     priceLines.push(candleSeries.createPriceLine({
                         price: levels.resistance,
-                        color: resColor,
-                        lineWidth: isCurrent ? 1.5 : 1,
-                        lineStyle: 1,
+                        color: SR_CELESTE_COLOR,
+                        lineWidth: lineWidth,
+                        lineStyle: LightweightCharts.LineStyle.Dotted,
                         axisLabelVisible: false,
                         title: ''
                     }));
@@ -939,9 +1014,9 @@
                     // Support Line
                     priceLines.push(candleSeries.createPriceLine({
                         price: levels.support,
-                        color: sopColor,
-                        lineWidth: isCurrent ? 1.5 : 1,
-                        lineStyle: 1,
+                        color: SR_CELESTE_COLOR,
+                        lineWidth: lineWidth,
+                        lineStyle: LightweightCharts.LineStyle.Dotted,
                         axisLabelVisible: false,
                         title: ''
                     }));
@@ -967,10 +1042,6 @@
                 if (!levels || !levels.resistance || !levels.support) return;
 
                 const isCurrent = (tf === currentInterval);
-                const tfTrendColor = levels.trendClass === 'bullish' ? '#0ecb81' : (levels.trendClass === 'bearish' ? '#f6465d' : '#f0b90b');
-
-                const resColor = tfTrendColor;
-                const sopColor = tfTrendColor;
 
                 // Resistance Label (R)
                 const yRes = candleSeries.priceToCoordinate(levels.resistance);
@@ -978,7 +1049,7 @@
                     const lblRes = document.createElement('div');
                     lblRes.className = `sr-overlay-label ${isCurrent ? 'current' : ''}`;
                     lblRes.style.top = `${yRes}px`;
-                    lblRes.style.color = resColor;
+                    lblRes.style.color = SR_CELESTE_COLOR;
                     lblRes.innerText = `R ${tf}: ${formatVal(levels.resistance)}`;
                     container.appendChild(lblRes);
                 }
@@ -989,7 +1060,7 @@
                     const lblSop = document.createElement('div');
                     lblSop.className = `sr-overlay-label ${isCurrent ? 'current' : ''}`;
                     lblSop.style.top = `${ySop}px`;
-                    lblSop.style.color = sopColor;
+                    lblSop.style.color = SR_CELESTE_COLOR;
                     lblSop.innerText = `S ${tf}: ${formatVal(levels.support)}`;
                     container.appendChild(lblSop);
                 }
@@ -1003,6 +1074,12 @@
             const currentLevels = calculateTfLevels(chartData);
             if (currentLevels) {
                 allTfLevels[currentInterval] = currentLevels;
+
+                // Update Chart badge for current timeframe
+                const badge = document.querySelector(`.tf-chart-badge[data-tf="${currentInterval}"]`);
+                if (badge) {
+                    badge.className = `tf-chart-badge ${currentLevels.trendClass} active`;
+                }
             }
 
             renderAllTimeframePriceLines();
@@ -1040,6 +1117,12 @@
                                 trendEl.innerText = res.trendText;
                                 trendEl.className = `tf-trend ${res.trendClass}`;
                             }
+                        }
+
+                        // Update Chart horizontal badge for this tf
+                        const badge = document.querySelector(`.tf-chart-badge[data-tf="${tf}"]`);
+                        if (badge) {
+                            badge.className = `tf-chart-badge ${res.trendClass}${tf === currentInterval ? ' active' : ''}`;
                         }
                     }
                 });
@@ -1290,6 +1373,9 @@
             document.querySelectorAll('.tf-row').forEach(row => {
                 row.classList.toggle('active', row.getAttribute('data-tf') === newInterval);
             });
+            document.querySelectorAll('.tf-chart-badge').forEach(badge => {
+                badge.classList.toggle('active', badge.getAttribute('data-tf') === newInterval);
+            });
 
             const intervalNames = {
                 '1m': '1 Minuto 1m',
@@ -1332,6 +1418,13 @@
         document.querySelectorAll('.tf-row').forEach(row => {
             row.addEventListener('click', () => {
                 const newInterval = row.getAttribute('data-tf');
+                changeInterval(newInterval);
+            });
+        });
+
+        document.querySelectorAll('.tf-chart-badge').forEach(badge => {
+            badge.addEventListener('click', () => {
+                const newInterval = badge.getAttribute('data-tf');
                 changeInterval(newInterval);
             });
         });
