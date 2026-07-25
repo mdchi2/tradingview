@@ -483,11 +483,9 @@
             user-select: none;
             z-index: 2;
         }
-        .sr-overlay-label.res {
-            color: #38bdf8;
-        }
+        .sr-overlay-label.res,
         .sr-overlay-label.sop {
-            color: #38bdf8;
+            color: var(--text-primary);
         }
         .sr-overlay-label.current {
             font-size: 15px;
@@ -672,7 +670,7 @@
 
                 <div class="control-row" style="margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
                     <span class="control-label">
-                        <span class="indicator-dot" style="background-color: #38bdf8;"></span>
+                        <span class="indicator-dot" style="background: linear-gradient(135deg, #0ecb81, #f0b90b, #f6465d);"></span>
                         Sop y Res
                     </span>
                     <label class="switch">
@@ -977,7 +975,17 @@
             '1d': 3
         };
 
-        const SR_CELESTE_COLOR = '#38bdf8'; // Celeste color for lines and text
+        const TF_TREND_COLORS = {
+            bullish: '#0ecb81', // Verde para Alcista 🟢
+            bearish: '#f6465d', // Rojo para Bajista 🔴
+            neutral: '#f0b90b'  // Amarillo para Consolidación 🟡
+        };
+
+        function getTfColor(tf) {
+            const levels = allTfLevels[tf];
+            const trendClass = levels ? levels.trendClass : 'neutral';
+            return TF_TREND_COLORS[trendClass] || '#f0b90b';
+        }
 
         // Render Support and Resistance lines for ALL timeframes on chart
         function renderAllTimeframePriceLines() {
@@ -998,12 +1006,13 @@
                 if (!levels || !levels.resistance || !levels.support) return;
 
                 const lineWidth = TF_LINE_WIDTHS[tf] || 1;
+                const lineColor = getTfColor(tf);
 
                 try {
                     // Resistance Line
                     priceLines.push(candleSeries.createPriceLine({
                         price: levels.resistance,
-                        color: SR_CELESTE_COLOR,
+                        color: lineColor,
                         lineWidth: lineWidth,
                         lineStyle: LightweightCharts.LineStyle.Dotted,
                         axisLabelVisible: false,
@@ -1013,7 +1022,7 @@
                     // Support Line
                     priceLines.push(candleSeries.createPriceLine({
                         price: levels.support,
-                        color: SR_CELESTE_COLOR,
+                        color: lineColor,
                         lineWidth: lineWidth,
                         lineStyle: LightweightCharts.LineStyle.Dotted,
                         axisLabelVisible: false,
@@ -1041,6 +1050,7 @@
                 if (!levels || !levels.resistance || !levels.support) return;
 
                 const isCurrent = (tf === currentInterval);
+                const labelColor = getTfColor(tf);
 
                 // Resistance Label (R)
                 const yRes = candleSeries.priceToCoordinate(levels.resistance);
@@ -1048,7 +1058,7 @@
                     const lblRes = document.createElement('div');
                     lblRes.className = `sr-overlay-label ${isCurrent ? 'current' : ''}`;
                     lblRes.style.top = `${yRes}px`;
-                    lblRes.style.color = SR_CELESTE_COLOR;
+                    lblRes.style.color = labelColor;
                     lblRes.innerText = `R ${tf}: ${formatVal(levels.resistance)}`;
                     container.appendChild(lblRes);
                 }
@@ -1059,7 +1069,7 @@
                     const lblSop = document.createElement('div');
                     lblSop.className = `sr-overlay-label ${isCurrent ? 'current' : ''}`;
                     lblSop.style.top = `${ySop}px`;
-                    lblSop.style.color = SR_CELESTE_COLOR;
+                    lblSop.style.color = labelColor;
                     lblSop.innerText = `S ${tf}: ${formatVal(levels.support)}`;
                     container.appendChild(lblSop);
                 }
