@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC/USD Margex Trading Dashboard with VPVR</title>
+    <!-- Google Fonts for premium trading look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #080a0f;
+            --panel-bg: rgba(17, 22, 37, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f4f8;
+            --text-secondary: #90a4ae;
+            --binance-green: #0ecb81;
+            --binance-red: #f6465d;
+            --binance-yellow: #f0b90b;
+            --glow-green: rgba(14, 203, 129, 0.15);
+            --glow-red: rgba(246, 70, 93, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Live Header Stats */
+        .dashboard-header {
+            background-color: rgba(11, 14, 22, 0.95);
+            border-bottom: 1px solid var(--panel-border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .coin-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--binance-yellow), #e28a00);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #000;
+            font-size: 16px;
+            box-shadow: 0 0 12px rgba(240, 185, 11, 0.4);
+        }
+
+        .coin-name {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .coin-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .coin-title span {
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .coin-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .stats-grid {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-value.price {
+            font-size: 22px;
+            transition: color 0.15s ease, text-shadow 0.15s ease;
+        }
+
+        .stat-value.up {
+            color: var(--binance-green);
+        }
+
+        .stat-value.down {
+            color: var(--binance-red);
+        }
+
+        /* Main Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Chart Wrapper */
+        .chart-wrapper {
+            flex: 1;
+            position: relative;
+            background-color: #0c0d12;
+        }
+
+        #tradingview_chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        #vpvr_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Sidebar Control Panel */
+        .control-sidebar {
+            width: 280px;
+            background-color: rgba(11, 14, 23, 0.95);
+            border-left: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 24px;
+            overflow-y: auto;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        /* Switches & Controls styling */
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .control-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Custom Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .2s;
+            border-radius: 20px;
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-toggle {
+            background-color: var(--binance-yellow);
+        }
+
+        input:checked + .slider-toggle:before {
+            transform: translateX(18px);
+            background-color: #000;
+        }
+
+        /* Custom Slider Styling */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 450ms ease-in;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--binance-yellow);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-group.grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .btn-option {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-option.active {
+            background: var(--binance-yellow);
+            color: #000;
+        }
+
+        /* Status Indicator Banner */
+        .conn-status {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 16px;
+        }
+
+        .status-pulse {
+            width: 6px;
+            height: 6px;
+            background-color: var(--binance-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--binance-green);
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Tooltip style */
+        .tooltip {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            padding: 10px;
+            border-left: 3px solid var(--binance-yellow);
+        }
+
+        /* Top-Left Timeframe Trend Bar */
+        .tf-trend-bar {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(11, 14, 23, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .tf-trend-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .tf-trend-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tf-trend-item.active {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+        }
+
+        .tf-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--text-secondary);
+            display: inline-block;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Trend Status Styles */
+        .tf-trend-item.bullish {
+            color: var(--binance-green);
+            background: rgba(14, 203, 129, 0.12);
+            border-color: rgba(14, 203, 129, 0.3);
+        }
+        .tf-trend-item.bullish .tf-dot {
+            background-color: var(--binance-green);
+            box-shadow: 0 0 6px var(--binance-green);
+        }
+
+        .tf-trend-item.bearish {
+            color: var(--binance-red);
+            background: rgba(246, 70, 93, 0.12);
+            border-color: rgba(246, 70, 93, 0.3);
+        }
+        .tf-trend-item.bearish .tf-dot {
+            background-color: var(--binance-red);
+            box-shadow: 0 0 6px var(--binance-red);
+        }
+
+        .tf-trend-item.consolidation {
+            color: var(--binance-yellow);
+            background: rgba(240, 185, 11, 0.12);
+            border-color: rgba(240, 185, 11, 0.3);
+        }
+        .tf-trend-item.consolidation .tf-dot {
+            background-color: var(--binance-yellow);
+            box-shadow: 0 0 6px var(--binance-yellow);
+        }
+
+        /* Toast Alert Container */
+        .alert-toast-container {
+            position: absolute;
+            top: 55px;
+            right: 20px;
+            z-index: 120;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+            max-width: 320px;
+        }
+
+        .alert-toast {
+            background: rgba(15, 20, 32, 0.95);
+            border: 1px solid var(--panel-border);
+            border-left: 4px solid var(--binance-yellow);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            font-size: 13px;
+            animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .alert-toast.long {
+            border-left-color: var(--binance-green);
+            background: linear-gradient(135deg, rgba(14, 203, 129, 0.15), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.short {
+            border-left-color: var(--binance-red);
+            background: linear-gradient(135deg, rgba(246, 70, 93, 0.15), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.tp {
+            border-left-color: #00d2ff;
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.18), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.sl {
+            border-left-color: var(--binance-red);
+            background: linear-gradient(135deg, rgba(246, 70, 93, 0.2), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .alert-toast-body {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .alert-toast-close {
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* NY Session Status Card in Sidebar */
+        .ny-status-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ny-status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .ny-status-badge {
+            padding: 3px 9px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+
+        .ny-status-badge.active {
+            background: rgba(0, 210, 255, 0.15);
+            color: #00d2ff;
+            border: 1px solid rgba(0, 210, 255, 0.4);
+        }
+
+        .ny-status-badge.long {
+            background: rgba(0, 210, 255, 0.2);
+            color: #00d2ff;
+        }
+
+        .ny-status-badge.short {
+            background: rgba(0, 210, 255, 0.2);
+            color: #00d2ff;
+        }
+
+        .ny-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+
+        .ny-grid-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px 8px;
+            border-radius: 4px;
+        }
+
+        .ny-grid-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Live Header Stats -->
+    <header class="dashboard-header">
+        <div class="logo-section">
+            <div class="coin-icon">₿</div>
+            <div class="coin-name">
+                <div class="coin-title">BTCUSD <span>Margex Live</span></div>
+                <div class="coin-subtitle">Intervalo: 1 Minuto (1m)</div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Precio</span>
+                <span class="stat-value price" id="live_price">---.--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Cambio 24h</span>
+                <span class="stat-value" id="price_change">--.--%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Máx / Mín 24h</span>
+                <span class="stat-value" id="price_range">--- / ---</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Volumen 24h (USDT)</span>
+                <span class="stat-value" id="volume_24h">---.-- M</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        <!-- Chart Area -->
+        <div class="chart-wrapper">
+            <!-- Top-Left Multi-Timeframe Trend Bar -->
+            <div class="tf-trend-bar" id="tf_trend_bar">
+                <button class="tf-trend-item interval-btn active" data-interval="1m"><span class="tf-dot"></span>1m</button>
+                <button class="tf-trend-item interval-btn" data-interval="5m"><span class="tf-dot"></span>5m</button>
+                <button class="tf-trend-item interval-btn" data-interval="15m"><span class="tf-dot"></span>15m</button>
+                <button class="tf-trend-item interval-btn" data-interval="30m"><span class="tf-dot"></span>30m</button>
+                <button class="tf-trend-item interval-btn" data-interval="1h"><span class="tf-dot"></span>1h</button>
+                <button class="tf-trend-item interval-btn" data-interval="4h"><span class="tf-dot"></span>4h</button>
+                <button class="tf-trend-item interval-btn" data-interval="1d"><span class="tf-dot"></span>1d</button>
+            </div>
+            <!-- TradingView Chart Container -->
+            <div id="tradingview_chart"></div>
+            <canvas id="vpvr_canvas"></canvas>
+        </div>
+
+        <!-- Sidebar Panel -->
+        <aside class="control-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Temporalidad</h3>
+                <div class="btn-group grid-3">
+                    <button class="btn-option interval-btn active" data-interval="1m">1m</button>
+                    <button class="btn-option interval-btn" data-interval="5m">5m</button>
+                    <button class="btn-option interval-btn" data-interval="15m">15m</button>
+                    <button class="btn-option interval-btn" data-interval="30m">30m</button>
+                    <button class="btn-option interval-btn" data-interval="1h">1h</button>
+                    <button class="btn-option interval-btn" data-interval="4h">4h</button>
+                    <button class="btn-option interval-btn" data-interval="1d">1d</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Patrón Apertura NY (10:30 hs AR)</h3>
+                
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #00d2ff;"></span>
+                        Estrategia NY Open
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ny_pattern" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">Ver Rango NY (High/Low)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ny_range" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Duración Rango Apertura</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-option active" id="ny_range_5m">5 Min (10:30-10:35)</button>
+                        <button class="btn-option" id="ny_range_15m">15 Min (10:30-10:45)</button>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Estado Sesion NY -->
+                <div class="ny-status-card">
+                    <div class="ny-status-header">
+                        <span>ESTADO APERTURA NY (10:30 hs)</span>
+                        <span class="ny-status-badge" id="ny_status_badge">ESPERANDO APERTURA</span>
+                    </div>
+                    <div class="ny-grid">
+                        <div class="ny-grid-item">
+                            <span class="ny-grid-label">NY High</span>
+                            <span id="ny_range_high" style="color: #00d2ff; font-size: 14px; font-weight: 700;">---.--</span>
+                        </div>
+                        <div class="ny-grid-item">
+                            <span class="ny-grid-label">NY Low</span>
+                            <span id="ny_range_low" style="color: #00d2ff; font-size: 14px; font-weight: 700;">---.--</span>
+                        </div>
+                        <div class="ny-grid-item">
+                            <span class="ny-grid-label">NY Open (10:30)</span>
+                            <span id="ny_open_price" style="color: #00d2ff; font-size: 14px; font-weight: 700;">---.--</span>
+                        </div>
+                        <div class="ny-grid-item">
+                            <span class="ny-grid-label">Señal / Estado</span>
+                            <span id="ny_signal_status" style="color: #00d2ff; font-size: 12px; font-weight: 600;">---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Indicadores</h3>
+                
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #FF0000;"></span>
+                        EMA 7 (Rojo)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ema7" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #00FF00;"></span>
+                        EMA 25 (Verde)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ema25" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Calibración Margex</h3>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Ajuste de Precio ($ USD)</span>
+                        <span id="label_price_offset">0 $</span>
+                    </div>
+                    <input type="range" id="slider_price_offset" class="range-slider" min="-100" max="100" step="1" value="0">
+                </div>
+            </div>
+
+            <div class="tooltip">
+                <strong>Patrón Apertura New York (10:30 hs Buenos Aires):</strong> Trazado del Rango de Apertura (ORB) a las 10:30 hs (Horario de Buenos Aires). Marca visualmente en color celeste todos los niveles de Entrada, Stop Loss y Take Profit (TP1/TP2) directamente en el gráfico.
+            </div>
+
+            <div class="conn-status">
+                <div class="status-pulse" id="connection_dot"></div>
+                <span id="connection_text">Conectando a Margex...</span>
+            </div>
+        </aside>
+    </div>
+
+    <!-- TradingView Lightweight Charts stand-alone production build -->
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+    <script>
+        // DOM Elements
+        const livePriceEl = document.getElementById('live_price');
+        const priceChangeEl = document.getElementById('price_change');
+        const priceRangeEl = document.getElementById('price_range');
+        const volume24hEl = document.getElementById('volume_24h');
+        const toggleEma7 = document.getElementById('toggle_ema7');
+        const toggleEma25 = document.getElementById('toggle_ema25');
+        const connectionDot = document.getElementById('connection_dot');
+        const connectionText = document.getElementById('connection_text');
+        const sliderPriceOffset = document.getElementById('slider_price_offset');
+        const labelPriceOffset = document.getElementById('label_price_offset');
+
+        // Global Chart variables
+        let chart;
+        let candleSeries;
+        let volumeSeries;
+        let ema7Series;
+        let ema25Series;
+        let ws;
+
+        // Global data stores
+        let chartData = [];
+        let ema7Data = [];
+        let ema25Data = [];
+        let currentInterval = '1m';
+
+        // NY Open Pattern State
+        const toggleNyPattern = document.getElementById('toggle_ny_pattern');
+        const toggleNyRange = document.getElementById('toggle_ny_range');
+        const nyRange5mBtn = document.getElementById('ny_range_5m');
+        const nyRange15mBtn = document.getElementById('ny_range_15m');
+
+        let nyPatternEnabled = true;
+        let nyRangeVisible = true;
+        let nyRangeMinutes = 5;
+        let nyRRMultiplier = 1.5;
+        let activeNYDayData = null;
+
+        // Canvas Setup
+        const canvas = document.getElementById('vpvr_canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get Buenos Aires local date time for a candle Unix timestamp
+        function getBsAsDateTime(unixSec) {
+            const d = new Date(unixSec * 1000);
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Argentina/Buenos_Aires',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+            });
+            const parts = formatter.formatToParts(d);
+            const res = {};
+            parts.forEach(p => res[p.type] = p.value);
+            return {
+                year: parseInt(res.year),
+                month: parseInt(res.month),
+                day: parseInt(res.day),
+                hour: parseInt(res.hour),
+                minute: parseInt(res.minute),
+                dateKey: `${res.year}-${res.month.padStart(2,'0')}-${res.day.padStart(2,'0')}`
+            };
+        }
+
+        // Evaluates NY Opening Pattern (Apertura 10:30 hs Buenos Aires)
+        function evaluateNYPattern(isRealtimeUpdate = false) {
+            if (!nyPatternEnabled || !chartData || chartData.length < 5) {
+                if (candleSeries) candleSeries.setMarkers([]);
+                activeNYDayData = null;
+                updateNYStatusCardUI(null);
+                return;
+            }
+
+            // Group candles by Buenos Aires date key
+            const nyDays = {};
+            for (let i = 0; i < chartData.length; i++) {
+                const candle = chartData[i];
+                const bsAsTime = getBsAsDateTime(candle.time);
+                if (!nyDays[bsAsTime.dateKey]) {
+                    nyDays[bsAsTime.dateKey] = {
+                        dateKey: bsAsTime.dateKey,
+                        rangeCandles: [],
+                        sessionCandles: [],
+                        high: -Infinity,
+                        low: Infinity,
+                        openPrice: null,
+                        signal: null
+                    };
+                }
+                const day = nyDays[bsAsTime.dateKey];
+
+                // NY Opening Range starts at 10:30 AM Buenos Aires time
+                const totalMinutes = bsAsTime.hour * 60 + bsAsTime.minute;
+                const openStartMinutes = 10 * 60 + 30; // 10:30 AM = 630 min
+                const openEndMinutes = openStartMinutes + nyRangeMinutes; // 630 + nyRangeMinutes
+                const sessionEndMinutes = 17 * 60; // 5:00 PM = 1020 min
+
+                if (totalMinutes >= openStartMinutes && totalMinutes < openEndMinutes) {
+                    day.rangeCandles.push(candle);
+                    if (candle.high > day.high) day.high = candle.high;
+                    if (candle.low < day.low) day.low = candle.low;
+                    if (day.openPrice === null) day.openPrice = candle.open;
+                } else if (totalMinutes >= openEndMinutes && totalMinutes < sessionEndMinutes) {
+                    day.sessionCandles.push(candle);
+                }
+            }
+
+            const sortedDateKeys = Object.keys(nyDays).sort();
+
+            sortedDateKeys.forEach(dateKey => {
+                const day = nyDays[dateKey];
+                if (day.rangeCandles.length === 0 || day.high === -Infinity) return;
+
+                // Check for breakout in sessionCandles
+                for (let i = 0; i < day.sessionCandles.length; i++) {
+                    const candle = day.sessionCandles[i];
+                    
+                    if (!day.signal) {
+                        // Check Long Breakout
+                        if (candle.close > day.high) {
+                            const entryPrice = candle.close;
+                            const slPrice = day.low;
+                            const risk = Math.max(10, entryPrice - slPrice);
+                            const tp1Price = entryPrice + (risk * nyRRMultiplier);
+                            const tp2Price = entryPrice + (risk * (nyRRMultiplier * 1.6));
+
+                            day.signal = {
+                                dayKey: dateKey,
+                                type: 'LONG',
+                                candleTime: candle.time,
+                                entryPrice,
+                                slPrice,
+                                tp1Price,
+                                tp2Price,
+                                hitTP1: false,
+                                hitTP2: false,
+                                hitSL: false,
+                                status: 'ACTIVA'
+                            };
+                        }
+                        // Check Short Breakout
+                        else if (candle.close < day.low) {
+                            const entryPrice = candle.close;
+                            const slPrice = day.high;
+                            const risk = Math.max(10, slPrice - entryPrice);
+                            const tp1Price = entryPrice - (risk * nyRRMultiplier);
+                            const tp2Price = entryPrice - (risk * (nyRRMultiplier * 1.6));
+
+                            day.signal = {
+                                dayKey: dateKey,
+                                type: 'SHORT',
+                                candleTime: candle.time,
+                                entryPrice,
+                                slPrice,
+                                tp1Price,
+                                tp2Price,
+                                hitTP1: false,
+                                hitTP2: false,
+                                hitSL: false,
+                                status: 'ACTIVA'
+                            };
+                        }
+                    } else {
+                        // Track TP / SL hits after entry
+                        const sig = day.signal;
+                        if (sig.type === 'LONG') {
+                            if (candle.high >= sig.tp1Price && !sig.hitTP1) {
+                                sig.hitTP1 = true;
+                                sig.status = 'TP1 ALCANZADO';
+                            }
+                            if (candle.high >= sig.tp2Price && !sig.hitTP2) {
+                                sig.hitTP2 = true;
+                                sig.status = 'TP2 ALCANZADO';
+                            }
+                            if (candle.low <= sig.slPrice && !sig.hitSL && !sig.hitTP1) {
+                                sig.hitSL = true;
+                                sig.status = 'STOP LOSS';
+                            }
+                        } else if (sig.type === 'SHORT') {
+                            if (candle.low <= sig.tp1Price && !sig.hitTP1) {
+                                sig.hitTP1 = true;
+                                sig.status = 'TP1 ALCANZADO';
+                            }
+                            if (candle.low <= sig.tp2Price && !sig.hitTP2) {
+                                sig.hitTP2 = true;
+                                sig.status = 'TP2 ALCANZADO';
+                            }
+                            if (candle.high >= sig.slPrice && !sig.hitSL && !sig.hitTP1) {
+                                sig.hitSL = true;
+                                sig.status = 'STOP LOSS';
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Determine latest active day data for UI & Canvas overlay
+            if (sortedDateKeys.length > 0) {
+                activeNYDayData = nyDays[sortedDateKeys[sortedDateKeys.length - 1]];
+            }
+
+            // Update markers on chart (All Celeste / Cyan)
+            const markers = [];
+            sortedDateKeys.forEach(dateKey => {
+                const sig = nyDays[dateKey].signal;
+                if (sig) {
+                    if (sig.type === 'LONG') {
+                        markers.push({
+                            time: sig.candleTime,
+                            position: 'belowBar',
+                            color: '#00d2ff',
+                            shape: 'arrowUp',
+                            text: `ENTRADA COMPRA NY ($${sig.entryPrice.toFixed(0)})`
+                        });
+                    } else if (sig.type === 'SHORT') {
+                        markers.push({
+                            time: sig.candleTime,
+                            position: 'aboveBar',
+                            color: '#00d2ff',
+                            shape: 'arrowDown',
+                            text: `ENTRADA VENTA NY ($${sig.entryPrice.toFixed(0)})`
+                        });
+                    }
+                }
+            });
+
+            if (candleSeries) {
+                candleSeries.setMarkers(markers);
+            }
+
+            updateNYStatusCardUI(activeNYDayData);
+        }
+
+        // Update NY Session Status Card in sidebar UI
+        function updateNYStatusCardUI(dayData) {
+            const badgeEl = document.getElementById('ny_status_badge');
+            const rangeHighEl = document.getElementById('ny_range_high');
+            const rangeLowEl = document.getElementById('ny_range_low');
+            const openPriceEl = document.getElementById('ny_open_price');
+            const signalStatusEl = document.getElementById('ny_signal_status');
+
+            if (!dayData || dayData.high === -Infinity) {
+                if (badgeEl) { badgeEl.innerText = "ESPERANDO APERTURA"; badgeEl.className = "ny-status-badge"; }
+                if (rangeHighEl) rangeHighEl.innerText = "---.--";
+                if (rangeLowEl) rangeLowEl.innerText = "---.--";
+                if (openPriceEl) openPriceEl.innerText = "---.--";
+                if (signalStatusEl) signalStatusEl.innerText = "Sin Rango";
+                return;
+            }
+
+            if (rangeHighEl) rangeHighEl.innerText = dayData.high.toLocaleString('en-US', { maximumFractionDigits: 1 });
+            if (rangeLowEl) rangeLowEl.innerText = dayData.low.toLocaleString('en-US', { maximumFractionDigits: 1 });
+            if (openPriceEl) openPriceEl.innerText = dayData.openPrice ? dayData.openPrice.toLocaleString('en-US', { maximumFractionDigits: 1 }) : "---.--";
+
+            if (dayData.signal) {
+                const sig = dayData.signal;
+                if (badgeEl) {
+                    badgeEl.innerText = `SEÑAL ${sig.type}`;
+                    badgeEl.className = `ny-status-badge active`;
+                    badgeEl.style.color = "#00d2ff";
+                    badgeEl.style.borderColor = "rgba(0, 210, 255, 0.4)";
+                    badgeEl.style.background = "rgba(0, 210, 255, 0.15)";
+                }
+                if (signalStatusEl) signalStatusEl.innerText = `Entrada: $${sig.entryPrice.toFixed(0)} (${sig.status})`;
+            } else {
+                if (badgeEl) {
+                    badgeEl.innerText = "RANGO FIJADO";
+                    badgeEl.className = "ny-status-badge active";
+                    badgeEl.style.color = "#00d2ff";
+                    badgeEl.style.borderColor = "rgba(0, 210, 255, 0.4)";
+                    badgeEl.style.background = "rgba(0, 210, 255, 0.15)";
+                }
+                if (signalStatusEl) signalStatusEl.innerText = "Esperando Ruptura";
+            }
+        }
+
+        // Draw NY Opening Range & Trade Level Projections on Canvas Overlay (All Celeste / Cyan)
+        function renderCanvasOverlay() {
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+            const chartPaneWidth = width - 80;
+
+            drawNYPatternOverlay(chartPaneWidth, height);
+        }
+
+        function drawNYPatternOverlay(chartPaneWidth, height) {
+            if (!nyPatternEnabled || !activeNYDayData || activeNYDayData.high === -Infinity) return;
+
+            const day = activeNYDayData;
+            const yHigh = candleSeries.priceToCoordinate(day.high);
+            const yLow = candleSeries.priceToCoordinate(day.low);
+
+            if (yHigh === null || yLow === null) return;
+
+            const yTop = Math.min(yHigh, yLow);
+            const boxHeight = Math.max(2, Math.abs(yLow - yHigh));
+
+            let xStart = chartPaneWidth;
+            let xEnd = chartPaneWidth;
+
+            if (day.rangeCandles.length > 0) {
+                const t1 = day.rangeCandles[0].time;
+                const x1 = chart.timeScale().timeToCoordinate(t1);
+                if (x1 !== null) xStart = Math.max(0, x1);
+
+                // End timestamp of opening range
+                const tEnd = t1 + (nyRangeMinutes * 60);
+                const x2 = chart.timeScale().timeToCoordinate(tEnd);
+                if (x2 !== null) {
+                    xEnd = Math.min(chartPaneWidth, Math.max(xStart, x2));
+                } else if (day.rangeCandles.length > 1) {
+                    const lastCandle = day.rangeCandles[day.rangeCandles.length - 1];
+                    const xLast = chart.timeScale().timeToCoordinate(lastCandle.time);
+                    if (xLast !== null) xEnd = Math.min(chartPaneWidth, Math.max(xStart, xLast));
+                }
+            }
+
+            if (nyRangeVisible && xStart < chartPaneWidth) {
+                ctx.save();
+                const rectWidth = Math.max(2, xEnd - xStart);
+
+                // Sombra de Rango Apertura NY (Limitada estrictamente al inicio y fin del rango)
+                ctx.fillStyle = 'rgba(0, 210, 255, 0.08)';
+                ctx.fillRect(xStart, yTop, rectWidth, boxHeight);
+
+                // Línea NY High (Celeste - limitada al rango)
+                ctx.strokeStyle = 'rgba(0, 210, 255, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(xStart, yTop);
+                ctx.lineTo(xEnd, yTop);
+                ctx.stroke();
+
+                ctx.font = "bold 14px 'JetBrains Mono', monospace";
+                ctx.fillStyle = '#00d2ff';
+                ctx.fillText(`NY HIGH: $${day.high.toFixed(0)}`, Math.max(xStart + 10, 20), yTop - 5);
+
+                // Línea NY Low (Celeste - limitada al rango)
+                ctx.beginPath();
+                ctx.moveTo(xStart, yTop + boxHeight);
+                ctx.lineTo(xEnd, yTop + boxHeight);
+                ctx.stroke();
+                ctx.fillText(`NY LOW: $${day.low.toFixed(0)}`, Math.max(xStart + 10, 20), yTop + boxHeight + 15);
+
+                // Línea NY Open Price (10:30 hs) (Celeste - limitada al rango)
+                if (day.openPrice) {
+                    const yOpen = candleSeries.priceToCoordinate(day.openPrice);
+                    if (yOpen !== null && yOpen >= 0 && yOpen <= height - 26) {
+                        ctx.strokeStyle = 'rgba(0, 210, 255, 0.4)';
+                        ctx.setLineDash([2, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(xStart, yOpen);
+                        ctx.lineTo(xEnd, yOpen);
+                        ctx.stroke();
+                        ctx.fillStyle = '#00d2ff';
+                        ctx.fillText(`NY OPEN (10:30): $${day.openPrice.toFixed(0)}`, Math.max(xStart + 10, 20), yOpen - 4);
+                    }
+                }
+                ctx.restore();
+            }
+
+            // Draw active Signal Lines (ENTRADA, STOP LOSS, TAKE PROFIT 1 & 2 - Todas en Celeste en 14px)
+            if (day.signal) {
+                const sig = day.signal;
+                const yEntry = candleSeries.priceToCoordinate(sig.entryPrice);
+                const ySL = candleSeries.priceToCoordinate(sig.slPrice);
+                const yTP1 = candleSeries.priceToCoordinate(sig.tp1Price);
+                const yTP2 = candleSeries.priceToCoordinate(sig.tp2Price);
+
+                let xSigStart = xStart;
+                const xSig = chart.timeScale().timeToCoordinate(sig.candleTime);
+                if (xSig !== null) xSigStart = Math.max(0, xSig);
+
+                ctx.save();
+                ctx.lineWidth = 2;
+
+                // 1. Línea de ENTRADA (Celeste)
+                if (yEntry !== null && yEntry >= 0 && yEntry <= height - 26) {
+                    ctx.strokeStyle = '#00d2ff';
+                    ctx.setLineDash([6, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(xSigStart, yEntry);
+                    ctx.lineTo(chartPaneWidth, yEntry);
+                    ctx.stroke();
+
+                    ctx.font = "bold 14px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#00d2ff';
+                    ctx.fillText(`ENTRADA ${sig.type} NY: $${sig.entryPrice.toFixed(0)}`, chartPaneWidth - 280, yEntry - 6);
+                }
+
+                // 2. Línea de STOP LOSS (Celeste)
+                if (ySL !== null && ySL >= 0 && ySL <= height - 26) {
+                    ctx.strokeStyle = '#00d2ff';
+                    ctx.setLineDash([4, 2]);
+                    ctx.beginPath();
+                    ctx.moveTo(xSigStart, ySL);
+                    ctx.lineTo(chartPaneWidth, ySL);
+                    ctx.stroke();
+
+                    ctx.font = "bold 14px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#00d2ff';
+                    ctx.fillText(`STOP LOSS: $${sig.slPrice.toFixed(0)}`, chartPaneWidth - 280, ySL - 6);
+                }
+
+                // 3. Línea de TAKE PROFIT 1 (Celeste)
+                if (yTP1 !== null && yTP1 >= 0 && yTP1 <= height - 26) {
+                    ctx.strokeStyle = '#00d2ff';
+                    ctx.setLineDash([6, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(xSigStart, yTP1);
+                    ctx.lineTo(chartPaneWidth, yTP1);
+                    ctx.stroke();
+
+                    ctx.font = "bold 14px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#00d2ff';
+                    ctx.fillText(`TAKE PROFIT 1 (1:${nyRRMultiplier}): $${sig.tp1Price.toFixed(0)} ${sig.hitTP1 ? '✓' : ''}`, chartPaneWidth - 280, yTP1 - 6);
+                }
+
+                // 4. Línea de TAKE PROFIT 2 (Celeste)
+                if (yTP2 !== null && yTP2 >= 0 && yTP2 <= height - 26) {
+                    ctx.strokeStyle = '#00d2ff';
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(xSigStart, yTP2);
+                    ctx.lineTo(chartPaneWidth, yTP2);
+                    ctx.stroke();
+
+                    ctx.font = "bold 14px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#00d2ff';
+                    ctx.fillText(`TAKE PROFIT 2 (1:${(nyRRMultiplier*1.6).toFixed(1)}): $${sig.tp2Price.toFixed(0)} ${sig.hitTP2 ? '✓' : ''}`, chartPaneWidth - 280, yTP2 - 6);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // Initialize Lightweight Chart
+        function initChart() {
+            const chartDiv = document.getElementById('tradingview_chart');
+            chart = LightweightCharts.createChart(chartDiv, {
+                layout: {
+                    background: { type: 'solid', color: '#0c0d12' },
+                    textColor: '#90a4ae',
+                    fontSize: 12,
+                    fontFamily: "'Outfit', sans-serif"
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.03)' }
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    scaleMargins: {
+                        top: 0.1,
+                        bottom: 0.15
+                    }
+                },
+                timeScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    timeVisible: true,
+                    secondsVisible: false,
+                    barSpacing: 6,
+                    tickMarkFormatter: (time, tickMarkType, locale) => {
+                        const date = new Date(time * 1000);
+                        const options = { timeZone: 'America/Argentina/Buenos_Aires' };
+                        if (tickMarkType === 0) return date.toLocaleDateString('es-AR', { ...options, year: 'numeric' });
+                        if (tickMarkType === 1) return date.toLocaleDateString('es-AR', { ...options, month: 'short' });
+                        if (tickMarkType === 2) return date.toLocaleDateString('es-AR', { ...options, day: 'numeric' });
+                        if (tickMarkType === 3) return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', hour12: false });
+                        if (tickMarkType === 4) return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                        return null;
+                    }
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                    vertLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed },
+                    horzLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed }
+                },
+                localization: {
+                    locale: 'es-AR',
+                    timeFormatter: (timestamp) => {
+                        const date = new Date(timestamp * 1000);
+                        const isIntraday = currentInterval !== '1d';
+                        const options = { timeZone: 'America/Argentina/Buenos_Aires' };
+                        if (isIntraday) {
+                            return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit' });
+                        } else {
+                            return date.toLocaleDateString('es-AR', { ...options, year: 'numeric', month: '2-digit', day: '2-digit' });
+                        }
+                    }
+                }
+            });
+
+            // Add candlestick series
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#0ecb81',
+                downColor: '#f6465d',
+                borderVisible: false,
+                wickUpColor: '#0ecb81',
+                wickDownColor: '#f6465d'
+            });
+
+            // Add Volume series as overlay
+            volumeSeries = chart.addHistogramSeries({
+                color: 'rgba(14, 203, 129, 0.2)',
+                priceFormat: { type: 'volume' },
+                priceScaleId: '', // overlay
+            });
+            volumeSeries.priceScale().applyOptions({
+                scaleMargins: {
+                    top: 0.8,
+                    bottom: 0
+                }
+            });
+
+            // Add EMA series
+            ema7Series = chart.addLineSeries({
+                color: '#FF0000',
+                lineWidth: 1.5,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+
+            ema25Series = chart.addLineSeries({
+                color: '#00FF00',
+                lineWidth: 1.5,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+
+            // Subscribe to visible range changes to recalculate overlay
+            chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+                requestAnimationFrame(renderCanvasOverlay);
+            });
+
+            // Handle Resize
+            const resizeObserver = new ResizeObserver(entries => {
+                if (entries.length === 0 || !entries[0].contentRect) return;
+                const { width, height } = entries[0].contentRect;
+                chart.resize(width, height);
+                resizeCanvas();
+            });
+            resizeObserver.observe(chartDiv);
+            resizeCanvas();
+        }
+
+        // Handle Canvas overlay resize
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            requestAnimationFrame(renderCanvasOverlay);
+        }
+
+        // Calculate EMA
+        function calculateEMA(data, length) {
+            const ema = [];
+            const k = 2 / (length + 1);
+            let prevEma = data[0].close;
+            ema.push({ time: data[0].time, value: prevEma });
+
+            for (let i = 1; i < data.length; i++) {
+                const val = data[i].close * k + prevEma * (1 - k);
+                ema.push({ time: data[i].time, value: val });
+                prevEma = val;
+            }
+            return ema;
+        }
+
+        // Margex Data Fetching & Stream Integration
+        const MARGEX_INTERVAL_MAP = {
+            '1m': '1M',
+            '5m': '5M',
+            '15m': '15M',
+            '30m': '30M',
+            '1h': '60M',
+            '4h': '4H',
+            '1d': '1D'
+        };
+
+        const BYBIT_INTERVAL_MAP = {
+            '1m': '1',
+            '5m': '5',
+            '15m': '15',
+            '30m': '30',
+            '1h': '60',
+            '4h': '240',
+            '1d': 'D'
+        };
+
+        let pollingTimer = null;
+        let priceOffset = 0;
+
+        function normalizeKlineData(raw) {
+            let items = Array.isArray(raw) ? raw : (raw.data || raw.result || raw.klines || []);
+            if (!Array.isArray(items)) return [];
+
+            const parsed = items.map(d => {
+                if (Array.isArray(d)) {
+                    const rawTime = d[0];
+                    const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    return {
+                        time: timeSec,
+                        open: parseFloat(d[1]),
+                        high: parseFloat(d[2]),
+                        low: parseFloat(d[3]),
+                        close: parseFloat(d[4]),
+                        volume: parseFloat(d[5] || 0)
+                    };
+                } else if (typeof d === 'object' && d !== null) {
+                    const rawTime = d.time || d.timestamp || d.t || d.openTime;
+                    const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    return {
+                        time: timeSec,
+                        open: parseFloat(d.open || d.o),
+                        high: parseFloat(d.high || d.h),
+                        low: parseFloat(d.low || d.l),
+                        close: parseFloat(d.close || d.c),
+                        volume: parseFloat(d.volume || d.vol || d.v || 0)
+                    };
+                }
+                return null;
+            }).filter(d => d !== null && !isNaN(d.time) && !isNaN(d.close))
+              .sort((a, b) => a.time - b.time);
+
+            const unique = [];
+            let lastTime = null;
+            for (const candle of parsed) {
+                if (candle.time !== lastTime) {
+                    unique.push(candle);
+                    lastTime = candle.time;
+                }
+            }
+            return unique;
+        }
+
+        async function fetchMargexData() {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
+                const margexUrl = `https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=1000`;
+                
+                let klinesData = [];
+                try {
+                    const klinesRes = await fetch(margexUrl);
+                    if (klinesRes.ok) {
+                        const text = await klinesRes.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            klinesData = normalizeKlineData(JSON.parse(text));
+                        }
+                    }
+                } catch (fetchErr) {
+                    console.warn("Margex direct fetch fallback: ", fetchErr);
+                }
+
+                if (klinesData.length === 0) {
+                    const fallbackUrls = [
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=1000`,
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`,
+                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`
+                    ];
+
+                    for (const fbUrl of fallbackUrls) {
+                        try {
+                            const fbRes = await fetch(fbUrl);
+                            if (fbRes.ok) {
+                                const text = await fbRes.text();
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    klinesData = normalizeKlineData(JSON.parse(text));
+                                    if (klinesData.length > 0) break;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+
+                if (klinesData.length === 0) {
+                    throw new Error("No data received from Margex data sources");
+                }
+
+                if (priceOffset !== 0) {
+                    klinesData = klinesData.map(c => ({
+                        ...c,
+                        open: c.open + priceOffset,
+                        high: c.high + priceOffset,
+                        low: c.low + priceOffset,
+                        close: c.close + priceOffset
+                    }));
+                }
+
+                chartData = klinesData;
+                ema7Data = calculateEMA(chartData, 7);
+                ema25Data = calculateEMA(chartData, 25);
+
+                candleSeries.setData(chartData);
+                volumeSeries.setData(chartData.map(d => ({
+                    time: d.time,
+                    value: d.volume,
+                    color: d.close >= d.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
+                })));
+                if (toggleEma7 && toggleEma7.checked) ema7Series.setData(ema7Data);
+                if (toggleEma25 && toggleEma25.checked) ema25Series.setData(ema25Data);
+
+                evaluateNYPattern(false);
+
+                if (chartData.length > 0) {
+                    const latest = chartData[chartData.length - 1];
+                    const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                    const changePercent = ((latest.close - first24h.open) / first24h.open) * 100;
+                    
+                    let high24h = -Infinity;
+                    let low24h = Infinity;
+                    let vol24h = 0;
+                    const slice24h = chartData.slice(-1440);
+                    for (const c of slice24h) {
+                        if (c.high > high24h) high24h = c.high;
+                        if (c.low < low24h) low24h = c.low;
+                        vol24h += c.volume;
+                    }
+
+                    updateHeaderStats({
+                        c: latest.close,
+                        P: changePercent,
+                        h: high24h,
+                        l: low24h,
+                        q: vol24h * latest.close
+                    });
+                }
+
+                requestAnimationFrame(renderCanvasOverlay);
+                connectMargexStream();
+
+            } catch (err) {
+                console.error("Error fetching Margex data: ", err);
+                if (connectionText) connectionText.innerText = "Error cargando datos de Margex.";
+                if (connectionDot) {
+                    connectionDot.style.backgroundColor = "var(--binance-red)";
+                    connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+                }
+            }
+        }
+
+        function connectMargexStream() {
+            if (ws) {
+                try { ws.onclose = null; ws.close(); } catch(e) {}
+                ws = null;
+            }
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+
+            let wsAttempted = false;
+            try {
+                ws = new WebSocket(`wss://api.margex.com/v1/ws`);
+
+                ws.onopen = () => {
+                    wsAttempted = true;
+                    if (connectionText) connectionText.innerText = "Margex Live WS Activo";
+                    if (connectionDot) {
+                        connectionDot.style.backgroundColor = "var(--binance-green)";
+                        connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+                    }
+
+                    const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                    ws.send(JSON.stringify({
+                        op: "subscribe",
+                        args: [`klines.${intervalParam}.BTCUSD`, `ticker.BTCUSD`]
+                    }));
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.topic && msg.topic.includes('kline') && msg.data) {
+                            const kData = normalizeKlineData([msg.data])[0];
+                            if (kData) updateRealtimeKlineFromCandle(kData);
+                        } else if (msg.topic && msg.topic.includes('ticker') && msg.data) {
+                            updateHeaderStats(msg.data);
+                        }
+                    } catch(e) {}
+                };
+
+                ws.onerror = () => { startPollingFallback(); };
+                ws.onclose = () => {
+                    if (!wsAttempted) {
+                        startPollingFallback();
+                    } else {
+                        if (connectionText) connectionText.innerText = "Reconectando a Margex...";
+                        if (connectionDot) {
+                            connectionDot.style.backgroundColor = "var(--binance-yellow)";
+                            connectionDot.style.boxShadow = "0 0 8px var(--binance-yellow)";
+                        }
+                        setTimeout(connectMargexStream, 5000);
+                    }
+                };
+            } catch (e) {
+                startPollingFallback();
+            }
+        }
+
+        function startPollingFallback() {
+            if (connectionText) connectionText.innerText = "Margex Live (HTTP Polling)";
+            if (connectionDot) {
+                connectionDot.style.backgroundColor = "var(--binance-green)";
+                connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+            }
+
+            if (!pollingTimer) {
+                pollingTimer = setInterval(async () => {
+                    await pollMargexLatest();
+                }, 3000);
+            }
+        }
+
+        async function pollMargexLatest() {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
+                let candles = [];
+                try {
+                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=5`);
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            candles = normalizeKlineData(JSON.parse(text));
+                        }
+                    }
+                } catch(e) {}
+
+                if (candles.length === 0) {
+                    const fallbackUrls = [
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=5`,
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`,
+                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`
+                    ];
+                    for (const fbUrl of fallbackUrls) {
+                        try {
+                            const fbRes = await fetch(fbUrl);
+                            if (fbRes.ok) {
+                                const text = await fbRes.text();
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    candles = normalizeKlineData(JSON.parse(text));
+                                    if (candles.length > 0) break;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+
+                if (candles.length > 0) {
+                    let latest = candles[candles.length - 1];
+                    if (priceOffset !== 0) {
+                        latest = {
+                            ...latest,
+                            open: latest.open + priceOffset,
+                            high: latest.high + priceOffset,
+                            low: latest.low + priceOffset,
+                            close: latest.close + priceOffset
+                        };
+                    }
+                    updateRealtimeKlineFromCandle(latest);
+
+                    if (chartData.length > 0) {
+                        const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                        const changePercent = ((latest.close - first24h.open) / first24h.open) * 100;
+                        
+                        let high24h = latest.high;
+                        let low24h = latest.low;
+                        const slice24h = chartData.slice(-100);
+                        for (const c of slice24h) {
+                            if (c.high > high24h) high24h = c.high;
+                            if (c.low < low24h) low24h = c.low;
+                        }
+
+                        updateHeaderStats({
+                            c: latest.close,
+                            P: changePercent,
+                            h: high24h,
+                            l: low24h,
+                            q: (slice24h.reduce((acc, curr) => acc + curr.volume, 0)) * latest.close
+                        });
+                    }
+                }
+            } catch(e) {}
+        }
+
+        let lastPrice = 0;
+        function updateHeaderStats(tick) {
+            if (!livePriceEl) return;
+            const price = parseFloat(tick.c);
+            livePriceEl.innerText = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            if (lastPrice !== 0 && price !== lastPrice) {
+                if (price > lastPrice) {
+                    livePriceEl.className = "stat-value price up";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(14, 203, 129, 0.4)";
+                } else {
+                    livePriceEl.className = "stat-value price down";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(246, 70, 93, 0.4)";
+                }
+            }
+            lastPrice = price;
+
+            setTimeout(() => {
+                if (livePriceEl) livePriceEl.style.textShadow = "none";
+            }, 200);
+
+            if (priceChangeEl) {
+                const changePercent = parseFloat(tick.P);
+                priceChangeEl.innerText = (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%";
+                priceChangeEl.className = "stat-value " + (changePercent >= 0 ? "up" : "down");
+            }
+
+            if (priceRangeEl) {
+                const high = parseFloat(tick.h).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                const low = parseFloat(tick.l).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                priceRangeEl.innerText = `${high} / ${low}`;
+            }
+
+            if (volume24hEl) {
+                const quoteVolume = parseFloat(tick.q) / 1000000;
+                volume24hEl.innerText = quoteVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " M";
+            }
+        }
+
+        function updateRealtimeKlineFromCandle(candle) {
+            const time = candle.time;
+            const lastIdx = chartData.length - 1;
+
+            if (lastIdx >= 0 && chartData[lastIdx].time === time) {
+                chartData[lastIdx] = candle;
+
+                const k7 = 2 / (7 + 1);
+                const prevEma7 = ema7Data[lastIdx - 1] ? ema7Data[lastIdx - 1].value : candle.close;
+                ema7Data[lastIdx] = { time: time, value: candle.close * k7 + prevEma7 * (1 - k7) };
+
+                const k25 = 2 / (25 + 1);
+                const prevEma25 = ema25Data[lastIdx - 1] ? ema25Data[lastIdx - 1].value : candle.close;
+                ema25Data[lastIdx] = { time: time, value: candle.close * k25 + prevEma25 * (1 - k25) };
+            } else if (lastIdx >= 0 && time > chartData[lastIdx].time) {
+                chartData.push(candle);
+
+                const k7 = 2 / (7 + 1);
+                const prevEma7 = ema7Data[lastIdx].value;
+                ema7Data.push({ time: time, value: candle.close * k7 + prevEma7 * (1 - k7) });
+
+                const k25 = 2 / (25 + 1);
+                const prevEma25 = ema25Data[lastIdx].value;
+                ema25Data.push({ time: time, value: candle.close * k25 + prevEma25 * (1 - k25) });
+
+                if (chartData.length > 1200) {
+                    chartData.shift();
+                    ema7Data.shift();
+                    ema25Data.shift();
+                }
+            }
+
+            if (candleSeries) candleSeries.update(candle);
+            if (volumeSeries) volumeSeries.update({
+                time: candle.time,
+                value: candle.volume,
+                color: candle.close >= candle.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
+            });
+
+            if (toggleEma7 && toggleEma7.checked && ema7Data.length > 0) {
+                ema7Series.update(ema7Data[ema7Data.length - 1]);
+            }
+            if (toggleEma25 && toggleEma25.checked && ema25Data.length > 0) {
+                ema25Series.update(ema25Data[ema25Data.length - 1]);
+            }
+
+            evaluateNYPattern(true);
+            requestAnimationFrame(renderCanvasOverlay);
+        }
+
+        // Toggle Switch & Slider Listeners
+        if (toggleEma7) {
+            toggleEma7.addEventListener('change', () => {
+                if (toggleEma7.checked) {
+                    ema7Series.setData(ema7Data);
+                } else {
+                    ema7Series.setData([]);
+                }
+            });
+        }
+
+        if (toggleEma25) {
+            toggleEma25.addEventListener('change', () => {
+                if (toggleEma25.checked) {
+                    ema25Series.setData(ema25Data);
+                } else {
+                    ema25Series.setData([]);
+                }
+            });
+        }
+
+        if (sliderPriceOffset) {
+            sliderPriceOffset.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                const diff = val - priceOffset;
+                priceOffset = val;
+                if (labelPriceOffset) labelPriceOffset.innerText = (priceOffset > 0 ? "+" : "") + priceOffset + " $";
+
+                if (diff !== 0 && chartData.length > 0) {
+                    chartData = chartData.map(c => ({
+                        ...c,
+                        open: c.open + diff,
+                        high: c.high + diff,
+                        low: c.low + diff,
+                        close: c.close + diff
+                    }));
+                    ema7Data = calculateEMA(chartData, 7);
+                    ema25Data = calculateEMA(chartData, 25);
+
+                    candleSeries.setData(chartData);
+                    if (toggleEma7.checked) ema7Series.setData(ema7Data);
+                    if (toggleEma25.checked) ema25Series.setData(ema25Data);
+
+                    if (chartData.length > 0) {
+                        const latest = chartData[chartData.length - 1];
+                        const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                        updateHeaderStats({
+                            c: latest.close,
+                            P: ((latest.close - first24h.open) / first24h.open) * 100,
+                            h: Math.max(...chartData.slice(-100).map(c => c.high)),
+                            l: Math.min(...chartData.slice(-100).map(c => c.low)),
+                            q: chartData.slice(-100).reduce((acc, curr) => acc + curr.volume, 0) * latest.close
+                        });
+                    }
+                    evaluateNYPattern(false);
+                    requestAnimationFrame(renderCanvasOverlay);
+                }
+            });
+        }
+
+        // Event listeners for NY Open Controls
+        if (toggleNyPattern) {
+            toggleNyPattern.addEventListener('change', () => {
+                nyPatternEnabled = toggleNyPattern.checked;
+                evaluateNYPattern(false);
+                requestAnimationFrame(renderCanvasOverlay);
+            });
+        }
+        if (toggleNyRange) {
+            toggleNyRange.addEventListener('change', () => {
+                nyRangeVisible = toggleNyRange.checked;
+                requestAnimationFrame(renderCanvasOverlay);
+            });
+        }
+        const durationBtns = [
+            { el: nyRange5mBtn, minutes: 5 },
+            { el: nyRange15mBtn, minutes: 15 }
+        ];
+
+        durationBtns.forEach(item => {
+            if (item.el) {
+                item.el.addEventListener('click', () => {
+                    nyRangeMinutes = item.minutes;
+                    durationBtns.forEach(b => {
+                        if (b.el) b.el.classList.remove('active');
+                    });
+                    item.el.classList.add('active');
+                    evaluateNYPattern(false);
+                    requestAnimationFrame(renderCanvasOverlay);
+                });
+            }
+        });
+
+        // Change candle timeframe
+        function changeInterval(newInterval) {
+            if (currentInterval === newInterval) return;
+            currentInterval = newInterval;
+
+            document.querySelectorAll('.interval-btn').forEach(btn => {
+                if (btn.getAttribute('data-interval') === newInterval) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const intervalNames = {
+                '1m': '1 Minuto (1m)',
+                '5m': '5 Minutos (5m)',
+                '15m': '15 Minutos (15m)',
+                '30m': '30 Minutos (30m)',
+                '1h': '1 Hora (1h)',
+                '4h': '4 Horas (4h)',
+                '1d': '1 Día (1d)'
+            };
+            const subtitleEl = document.querySelector('.coin-subtitle');
+            if (subtitleEl) subtitleEl.innerText = `Intervalo: ${intervalNames[newInterval]}`;
+
+            chartData = [];
+            ema7Data = [];
+            ema25Data = [];
+
+            candleSeries.setData([]);
+            volumeSeries.setData([]);
+            ema7Series.setData([]);
+            ema25Series.setData([]);
+
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+
+            if (ws) {
+                try { ws.onclose = null; ws.close(); } catch(e) {}
+                ws = null;
+            }
+
+            fetchMargexData();
+        }
+
+        document.querySelectorAll('.interval-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const newInterval = e.target.getAttribute('data-interval');
+                changeInterval(newInterval);
+            });
+        });
+
+        // Evaluate timeframe trend status
+        async function evaluateTimeframeTrend(interval) {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[interval] || interval;
+                let klines = [];
+                try {
+                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=50`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        klines = normalizeKlineData(json);
+                    }
+                } catch(e) {}
+
+                if (klines.length === 0) {
+                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=50`);
+                    if (fbRes.ok) {
+                        const json = await fbRes.json();
+                        klines = normalizeKlineData(json);
+                    }
+                }
+
+                if (!Array.isArray(klines) || klines.length < 25) return 'consolidation';
+
+                const closes = klines.map(k => k.close);
+                const highs = klines.map(k => k.high);
+                const lows = klines.map(k => k.low);
+
+                function getEMA(data, length) {
+                    const k = 2 / (length + 1);
+                    let ema = data[0];
+                    for (let i = 1; i < data.length; i++) {
+                        ema = data[i] * k + ema * (1 - k);
+                    }
+                    return ema;
+                }
+
+                const ema7 = getEMA(closes, 7);
+                const ema25 = getEMA(closes, 25);
+
+                let totalRange = 0;
+                const count = Math.min(14, klines.length);
+                for (let i = klines.length - count; i < klines.length; i++) {
+                    totalRange += (highs[i] - lows[i]);
+                }
+                const avgRange = totalRange / count;
+
+                const diff = ema7 - ema25;
+                const threshold = avgRange * 0.20;
+
+                if (Math.abs(diff) < threshold) {
+                    return 'consolidation';
+                } else if (diff > 0) {
+                    return 'bullish';
+                } else {
+                    return 'bearish';
+                }
+            } catch (e) {
+                return 'consolidation';
+            }
+        }
+
+        async function updateAllTimeframeTrends() {
+            const intervals = ['1m', '5m', '15m', '30m', '1h', '4h', '1d'];
+            const results = await Promise.all(intervals.map(tf => evaluateTimeframeTrend(tf)));
+            
+            intervals.forEach((tf, index) => {
+                const status = results[index];
+                const btn = document.querySelector(`.tf-trend-item[data-interval="${tf}"]`);
+                if (btn) {
+                    btn.classList.remove('bullish', 'bearish', 'consolidation');
+                    btn.classList.add(status);
+                }
+            });
+        }
+
+        // Initialize script
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            fetchMargexData();
+            updateAllTimeframeTrends();
+            setInterval(updateAllTimeframeTrends, 20000);
+        });
+    </script>
+</body>
+</html>
