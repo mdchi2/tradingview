@@ -531,66 +531,7 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* NY Support & Resistance Card in Sidebar */
-        .ny-status-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
 
-        .ny-status-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .ny-status-badge {
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-secondary);
-        }
-
-        .ny-status-badge.active {
-            background: rgba(240, 185, 11, 0.15);
-            color: var(--binance-yellow);
-            border: 1px solid rgba(240, 185, 11, 0.4);
-        }
-
-        .ny-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-        }
-
-        .ny-grid-item {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            background: rgba(0, 0, 0, 0.25);
-            padding: 6px 8px;
-            border-radius: 4px;
-        }
-
-        .ny-grid-label {
-            font-size: 10px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-family: 'Outfit', sans-serif;
-        }
     </style>
 </head>
 <body>
@@ -659,65 +600,7 @@
                 </div>
             </div>
 
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Soporte y Resistencia (Apertura)</h3>
-                
-                <div class="slider-container" style="margin-bottom: 4px;">
-                    <div class="slider-header">
-                        <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Bolsa de Apertura</span>
-                    </div>
-                    <div class="btn-group grid-3" id="session_selector">
-                        <button class="btn-option session-btn active" data-session="ny" title="Nueva York (10:30 hs BsAs)">NY 10:30</button>
-                        <button class="btn-option session-btn" data-session="euronext" title="Euronext (04:00 hs BsAs)">EUR 04:00</button>
-                        <button class="btn-option session-btn" data-session="tokyo" title="Tokio (21:00 hs BsAs)">TOK 21:00</button>
-                    </div>
-                </div>
 
-                <div class="control-row">
-                    <span class="control-label">
-                        <span class="indicator-dot" style="background-color: #f0b90b;"></span>
-                        Mostrar Niveles
-                    </span>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle_ny_sr" checked>
-                        <span class="slider-toggle"></span>
-                    </label>
-                </div>
-
-                <div class="slider-container">
-                    <div class="slider-header">
-                        <span>Rango R/S ($ USD)</span>
-                        <span id="label_ny_offset">±200 $</span>
-                    </div>
-                    <input type="range" id="slider_ny_offset" class="range-slider" min="50" max="1000" step="25" value="200">
-                </div>
-
-                <!-- Tarjeta de Estado Niveles -->
-                <div class="ny-status-card">
-                    <div class="ny-status-header">
-                        <span id="ny_card_header">VELA APERTURA NY (10:30 hs)</span>
-                        <span class="ny-status-badge active" id="ny_sr_badge" style="color: #00d2ff; border-color: rgba(0, 210, 255, 0.4); background: rgba(0, 210, 255, 0.15);">BUSCANDO...</span>
-                    </div>
-                    <div class="ny-grid">
-                        <div class="ny-grid-item">
-                            <span class="ny-grid-label" style="color: #00d2ff;">Límite Superior (+<span class="offset-val">200</span>$)</span>
-                            <span id="ny_res_price" style="color: #00d2ff; font-size: 13px; font-weight: 700;">---.--</span>
-                        </div>
-                        <div class="ny-grid-item">
-                            <span class="ny-grid-label" id="ny_open_label" style="color: #00d2ff;">NY Open (10:30)</span>
-                            <span id="ny_open_price" style="color: #00d2ff; font-size: 13px; font-weight: 700;">---.--</span>
-                        </div>
-                        <div class="ny-grid-item">
-                            <span class="ny-grid-label" style="color: #00d2ff;">Límite Inferior (-<span class="offset-val">200</span>$)</span>
-                            <span id="ny_sup_price" style="color: #00d2ff; font-size: 13px; font-weight: 700;">---.--</span>
-                        </div>
-                        <div class="ny-grid-item">
-                            <span class="ny-grid-label" style="color: var(--text-secondary);">Ancho Rango Total</span>
-                            <span id="ny_limits_price" style="color: var(--text-secondary); font-size: 11px; font-weight: 600;">--- $</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Indicadores</h3>
@@ -813,304 +696,52 @@
             renderCanvasOverlay();
         }
 
-        function centerOnSessionCandle(candleTime) {
-            if (!chartData || chartData.length === 0 || !chart) return;
-            const idx = chartData.findIndex(c => c.time === candleTime);
-            if (idx !== -1) {
-                const span = 50;
-                chart.timeScale().setVisibleLogicalRange({
-                    from: Math.max(0, idx - span),
-                    to: Math.min(chartData.length - 1, idx + span)
-                });
-            }
-        }
-        const centerOn1030Candle = centerOnSessionCandle;
-
-        function getBsAsTime(unixSec) {
-            const d = new Date(unixSec * 1000);
-            const formatter = new Intl.DateTimeFormat('en-US', {
-                timeZone: 'America/Argentina/Buenos_Aires',
-                year: 'numeric', month: '2-digit', day: '2-digit',
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-            });
-            const parts = formatter.formatToParts(d);
-            const res = {};
-            parts.forEach(p => res[p.type] = p.value);
-            return {
-                year: parseInt(res.year),
-                month: parseInt(res.month),
-                day: parseInt(res.day),
-                hour: parseInt(res.hour),
-                minute: parseInt(res.minute),
-                dateKey: `${res.year}-${res.month.padStart(2,'0')}-${res.day.padStart(2,'0')}`
-            };
-        }
-
-        const SESSIONS_CONFIG = {
-            ny: {
-                id: 'ny',
-                name: 'Nueva York',
-                shortName: 'NY',
-                hour: 10,
-                minute: 30,
-                label: 'NY OPEN 10:30',
-                fullLabel: 'VELA APERTURA NY (10:30 hs)',
-                gridLabel: 'NY Open (10:30)'
-            },
-            euronext: {
-                id: 'euronext',
-                name: 'Euronext',
-                shortName: 'EUR',
-                hour: 4,
-                minute: 0,
-                label: 'EURONEXT OPEN 04:00',
-                fullLabel: 'VELA APERTURA EURONEXT (04:00 hs)',
-                gridLabel: 'EUR Open (04:00)'
-            },
-            tokyo: {
-                id: 'tokyo',
-                name: 'Tokio',
-                shortName: 'TOK',
-                hour: 21,
-                minute: 0,
-                label: 'TOKIO OPEN 21:00',
-                fullLabel: 'VELA APERTURA TOKIO (21:00 hs)',
-                gridLabel: 'TOK Open (21:00)'
-            }
-        };
-
-        let currentSession = 'ny';
-
-        function findLatestSessionCandle(data, sessionKey) {
-            if (!data || data.length === 0) return null;
-            const config = SESSIONS_CONFIG[sessionKey] || SESSIONS_CONFIG.ny;
-            const targetHour = config.hour;
-            const targetMinute = config.minute;
-
-            // 1. Exact match (hour and minute match in BsAs time)
-            for (let i = data.length - 1; i >= 0; i--) {
-                const c = data[i];
-                const t = getBsAsTime(c.time);
-                if (t.hour === targetHour && t.minute === targetMinute) {
-                    return { candle: c, bsAsTime: t, config: config };
-                }
-            }
-
-            // 2. Hour match (for higher timeframes like 1h)
-            for (let i = data.length - 1; i >= 0; i--) {
-                const c = data[i];
-                const t = getBsAsTime(c.time);
-                if (t.hour === targetHour) {
-                    return { candle: c, bsAsTime: t, config: config };
-                }
-            }
-
-            // 3. Fallback: closest hour/minute candle
-            let bestMatch = null;
-            let minDiff = Infinity;
-            const searchLimit = Math.max(0, data.length - 200);
-            for (let i = data.length - 1; i >= searchLimit; i--) {
-                const c = data[i];
-                const t = getBsAsTime(c.time);
-                const diff = Math.abs((t.hour * 60 + t.minute) - (targetHour * 60 + targetMinute));
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    bestMatch = { candle: c, bsAsTime: t, config: config };
-                }
-            }
-
-            return bestMatch;
-        }
-
-        function updateNYSupportResistanceLines(shouldCenter = false) {
-            const toggleNySr = document.getElementById('toggle_ny_sr');
-            if ((toggleNySr && !toggleNySr.checked) || !chartData || chartData.length === 0 || !candleSeries) {
-                if (candleSeries) candleSeries.setMarkers([]);
-                updateNYCardUI(null);
-                renderCanvasOverlay();
-                return;
-            }
-
-            const resObj = findLatestSessionCandle(chartData, currentSession);
-            if (!resObj) {
-                if (candleSeries) candleSeries.setMarkers([]);
-                updateNYCardUI(null);
-                renderCanvasOverlay();
-                return;
-            }
-
-            const { candle } = resObj;
-            candleSeries.setMarkers([]);
-
-            if (shouldCenter) {
-                centerOnSessionCandle(candle.time);
-            }
-            renderCanvasOverlay();
-        }
-
         function renderCanvasOverlay() {
-            if (!canvas || !ctx || !candleSeries || !chart) return;
+            if (!canvas || !ctx || !candleSeries || !current5mOpenPrice) return;
             const rect = canvas.getBoundingClientRect();
             const width = rect.width;
             const height = rect.height;
 
             ctx.clearRect(0, 0, width, height);
 
-            const toggleNySr = document.getElementById('toggle_ny_sr');
-            if ((toggleNySr && !toggleNySr.checked) || !chartData || chartData.length === 0) {
-                updateNYCardUI(null);
-                return;
-            }
+            const upperPrice = current5mOpenPrice + 200;
+            const lowerPrice = current5mOpenPrice - 200;
 
-            const resObj = findLatestSessionCandle(chartData, currentSession);
-            if (!resObj) {
-                updateNYCardUI(null);
-                return;
-            }
-
-            const { candle, bsAsTime, config } = resObj;
-            const sliderOffset = document.getElementById('slider_ny_offset');
-            const offset = sliderOffset ? parseInt(sliderOffset.value) : 200;
-
-            const openPrice = candle.open;
-            const maxResLimit = openPrice + offset;
-            const minSupLimit = openPrice - offset;
-
-            const yUpper = candleSeries.priceToCoordinate(maxResLimit);
-            const yOpen = candleSeries.priceToCoordinate(openPrice);
-            const yLower = candleSeries.priceToCoordinate(minSupLimit);
+            const yUpper = candleSeries.priceToCoordinate(upperPrice);
+            const yLower = candleSeries.priceToCoordinate(lowerPrice);
 
             const chartPaneWidth = width - 75;
 
             ctx.save();
+            ctx.strokeStyle = '#00d2ff';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
 
-            // 1. LÍMITE RANGO SUPERIOR (+200$)
+            // Línea +200
             if (yUpper !== null && yUpper >= 0 && yUpper <= height) {
-                ctx.strokeStyle = '#00d2ff';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([6, 4]);
                 ctx.beginPath();
                 ctx.moveTo(0, yUpper);
                 ctx.lineTo(chartPaneWidth, yUpper);
                 ctx.stroke();
 
-                ctx.font = "bold 13px 'JetBrains Mono', monospace";
+                ctx.font = "bold 12px 'JetBrains Mono', monospace";
                 ctx.fillStyle = '#00d2ff';
-                ctx.fillText(`LÍMITE RANGO (+${offset}$): $${maxResLimit.toFixed(0)}`, 16, yUpper - 5);
+                ctx.fillText(`+200 ($${upperPrice.toFixed(1)})`, 16, yUpper - 5);
             }
 
-            // 2. OPEN DE LA SESIÓN SELECCIONADA
-            if (yOpen !== null && yOpen >= 0 && yOpen <= height) {
-                ctx.strokeStyle = '#00d2ff';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([3, 3]);
-                ctx.beginPath();
-                ctx.moveTo(0, yOpen);
-                ctx.lineTo(chartPaneWidth, yOpen);
-                ctx.stroke();
-
-                ctx.font = "bold 13px 'JetBrains Mono', monospace";
-                ctx.fillStyle = '#00d2ff';
-                ctx.fillText(`${config.label}: $${openPrice.toFixed(0)}`, 16, yOpen - 5);
-            }
-
-            // 3. LÍMITE RANGO INFERIOR (-200$)
+            // Línea -200
             if (yLower !== null && yLower >= 0 && yLower <= height) {
-                ctx.strokeStyle = '#00d2ff';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([6, 4]);
                 ctx.beginPath();
                 ctx.moveTo(0, yLower);
                 ctx.lineTo(chartPaneWidth, yLower);
                 ctx.stroke();
 
-                ctx.font = "bold 13px 'JetBrains Mono', monospace";
+                ctx.font = "bold 12px 'JetBrains Mono', monospace";
                 ctx.fillStyle = '#00d2ff';
-                ctx.fillText(`LÍMITE RANGO (-${offset}$): $${minSupLimit.toFixed(0)}`, 16, yLower + 16);
-            }
-
-            // 4. FLECHA GRANDE CELESTE SOBRE VELA DE APERTURA SELECCIONADA
-            const xCandle = chart.timeScale().timeToCoordinate(candle.time);
-            const yHigh = candleSeries.priceToCoordinate(candle.high);
-
-            if (xCandle !== null && yHigh !== null && xCandle >= 0 && xCandle <= chartPaneWidth) {
-                ctx.fillStyle = '#00d2ff';
-                ctx.strokeStyle = '#00d2ff';
-                ctx.lineWidth = 4;
-                ctx.setLineDash([]);
-
-                const arrowTipY = Math.max(15, yHigh - 12);
-                const arrowHeadHeight = 18;
-                const arrowHeadWidth = 14;
-                const arrowStemHeight = 24;
-                const arrowTopY = arrowTipY - arrowHeadHeight - arrowStemHeight;
-
-                // Tallo de la flecha
-                ctx.beginPath();
-                ctx.moveTo(xCandle, arrowTopY);
-                ctx.lineTo(xCandle, arrowTipY - arrowHeadHeight + 2);
-                ctx.stroke();
-
-                // Cabeza de la flecha apuntando abajo
-                ctx.beginPath();
-                ctx.moveTo(xCandle - arrowHeadWidth, arrowTipY - arrowHeadHeight);
-                ctx.lineTo(xCandle, arrowTipY);
-                ctx.lineTo(xCandle + arrowHeadWidth, arrowTipY - arrowHeadHeight);
-                ctx.closePath();
-                ctx.fill();
+                ctx.fillText(`-200 ($${lowerPrice.toFixed(1)})`, 16, yLower + 15);
             }
 
             ctx.restore();
-
-            updateNYCardUI({
-                open: openPrice,
-                maxResLimit: maxResLimit,
-                minSupLimit: minSupLimit,
-                offset: offset,
-                dateKey: bsAsTime.dateKey,
-                config: config
-            });
-        }
-
-        function updateNYCardUI(data) {
-            const badgeEl = document.getElementById('ny_sr_badge');
-            const resEl = document.getElementById('ny_res_price');
-            const openEl = document.getElementById('ny_open_price');
-            const supEl = document.getElementById('ny_sup_price');
-            const limitsEl = document.getElementById('ny_limits_price');
-            const offsetLabel = document.getElementById('label_ny_offset');
-            const offsetValEls = document.querySelectorAll('.offset-val');
-            const cardHeaderEl = document.getElementById('ny_card_header');
-            const openLabelEl = document.getElementById('ny_open_label');
-
-            const currentConfig = (data && data.config) ? data.config : (SESSIONS_CONFIG[currentSession] || SESSIONS_CONFIG.ny);
-
-            if (cardHeaderEl) cardHeaderEl.innerText = currentConfig.fullLabel;
-            if (openLabelEl) openLabelEl.innerText = currentConfig.gridLabel;
-
-            if (!data) {
-                if (badgeEl) { badgeEl.innerText = "INACTIVO"; badgeEl.className = "ny-status-badge"; }
-                if (resEl) resEl.innerText = "---.--";
-                if (openEl) openEl.innerText = "---.--";
-                if (supEl) supEl.innerText = "---.--";
-                if (limitsEl) limitsEl.innerText = "--- $";
-                return;
-            }
-
-            if (badgeEl) { 
-                badgeEl.innerText = "ACTIVO (" + data.dateKey + ")"; 
-                badgeEl.className = "ny-status-badge active"; 
-                badgeEl.style.color = "#00d2ff";
-                badgeEl.style.borderColor = "rgba(0, 210, 255, 0.4)";
-                badgeEl.style.background = "rgba(0, 210, 255, 0.15)";
-            }
-            if (resEl) resEl.innerText = "$" + data.maxResLimit.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-            if (openEl) openEl.innerText = "$" + data.open.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-            if (supEl) supEl.innerText = "$" + data.minSupLimit.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-            if (limitsEl) limitsEl.innerText = (data.offset * 2) + " $";
-
-            if (offsetLabel) offsetLabel.innerText = "±" + data.offset + " $";
-            offsetValEls.forEach(el => el.innerText = data.offset);
         }
 
         // Initialize Lightweight Chart
@@ -1130,9 +761,11 @@
                 rightPriceScale: {
                     borderColor: 'rgba(255, 255, 255, 0.08)',
                     scaleMargins: {
-                        top: 0.1,
-                        bottom: 0.15
-                    }
+                        top: 0,
+                        bottom: 0
+                    },
+                    alignLabels: false,
+                    entireTextOnly: false
                 },
                 timeScale: {
                     borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -1176,35 +809,41 @@
                 downColor: '#f6465d',
                 borderVisible: false,
                 wickUpColor: '#0ecb81',
-                wickDownColor: '#f6465d'
-            });
-
-            // Add Volume series as overlay
-            volumeSeries = chart.addHistogramSeries({
-                color: 'rgba(14, 203, 129, 0.2)',
-                priceFormat: { type: 'volume' },
-                priceScaleId: '', // overlay
-            });
-            volumeSeries.priceScale().applyOptions({
-                scaleMargins: {
-                    top: 0.8,
-                    bottom: 0
+                wickDownColor: '#f6465d',
+                autoscaleInfoProvider: () => {
+                    if (current5mOpenPrice && current5mOpenPrice > 0) {
+                        return {
+                            priceRange: {
+                                minValue: current5mOpenPrice - 300,
+                                maxValue: current5mOpenPrice + 300,
+                            },
+                            margins: {
+                                above: 0,
+                                below: 0,
+                            },
+                        };
+                    }
+                    return null;
                 }
             });
+
+
 
             // Add EMA series
             ema7Series = chart.addLineSeries({
                 color: '#FF0000',
                 lineWidth: 1.5,
                 priceLineVisible: false,
-                lastValueVisible: false
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => null
             });
 
             ema25Series = chart.addLineSeries({
                 color: '#00FF00',
                 lineWidth: 1.5,
                 priceLineVisible: false,
-                lastValueVisible: false
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => null
             });
 
             // Subscribe to visible range changes to recalculate overlay
@@ -1364,15 +1003,12 @@
                 ema25Data = calculateEMA(chartData, 25);
 
                 candleSeries.setData(chartData);
-                volumeSeries.setData(chartData.map(d => ({
-                    time: d.time,
-                    value: d.volume,
-                    color: d.close >= d.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
-                })));
                 if (toggleEma7 && toggleEma7.checked) ema7Series.setData(ema7Data);
                 if (toggleEma25 && toggleEma25.checked) ema25Series.setData(ema25Data);
 
-                updateNYSupportResistanceLines(true);
+                update5mOpenAndLines();
+
+
 
                 if (chartData.length > 0) {
                     const latest = chartData[chartData.length - 1];
@@ -1556,6 +1192,72 @@
         }
 
         let lastPrice = 0;
+        let current5mOpenPrice = null;
+        let lineUpper200 = null;
+        let lineLower200 = null;
+
+        function get5mOpenPrice(data) {
+            if (!data || data.length === 0) return null;
+            const latest = data[data.length - 1];
+            const fiveMinStartSec = Math.floor(latest.time / 300) * 300;
+
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (data[i].time === fiveMinStartSec) {
+                    return data[i].open;
+                }
+            }
+
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (data[i].time <= fiveMinStartSec) {
+                    return data[i].open;
+                }
+            }
+
+            return latest.open;
+        }
+
+        function update5mOpenAndLines() {
+            if (!chartData || chartData.length === 0) return;
+            
+            const new5mOpen = get5mOpenPrice(chartData);
+            if (!new5mOpen || isNaN(new5mOpen)) return;
+            current5mOpenPrice = new5mOpen;
+
+            const upperPrice = current5mOpenPrice + 200;
+            const lowerPrice = current5mOpenPrice - 200;
+
+            if (!lineUpper200) {
+                lineUpper200 = candleSeries.createPriceLine({
+                    price: upperPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: true,
+                    title: '+200',
+                });
+            } else {
+                lineUpper200.applyOptions({ price: upperPrice });
+            }
+
+            if (!lineLower200) {
+                lineLower200 = candleSeries.createPriceLine({
+                    price: lowerPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: true,
+                    title: '-200',
+                });
+            } else {
+                lineLower200.applyOptions({ price: lowerPrice });
+            }
+
+            if (chart) {
+                chart.priceScale('right').applyOptions({});
+                renderCanvasOverlay();
+            }
+        }
+
         function updateHeaderStats(tick) {
             if (!livePriceEl) return;
             const price = parseFloat(tick.c);
@@ -1571,6 +1273,8 @@
                 }
             }
             lastPrice = price;
+
+            update5mOpenAndLines();
 
             setTimeout(() => {
                 if (livePriceEl) livePriceEl.style.textShadow = "none";
@@ -1627,11 +1331,6 @@
             }
 
             if (candleSeries) candleSeries.update(candle);
-            if (volumeSeries) volumeSeries.update({
-                time: candle.time,
-                value: candle.volume,
-                color: candle.close >= candle.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
-            });
 
             if (toggleEma7 && toggleEma7.checked && ema7Data.length > 0) {
                 ema7Series.update(ema7Data[ema7Data.length - 1]);
@@ -1640,7 +1339,7 @@
                 ema25Series.update(ema25Data[ema25Data.length - 1]);
             }
 
-            updateNYSupportResistanceLines();
+            update5mOpenAndLines();
         }
 
         // Toggle Switch & Slider Listeners
@@ -1697,48 +1396,9 @@
                             q: chartData.slice(-100).reduce((acc, curr) => acc + curr.volume, 0) * latest.close
                         });
                     }
-                    updateNYSupportResistanceLines();
                 }
             });
         }
-
-        // Listeners for 10:30 NY Support & Resistance
-        const toggleNySrEl = document.getElementById('toggle_ny_sr');
-        if (toggleNySrEl) {
-            toggleNySrEl.addEventListener('change', () => {
-                updateNYSupportResistanceLines();
-            });
-        }
-
-        const sliderNyOffsetEl = document.getElementById('slider_ny_offset');
-        if (sliderNyOffsetEl) {
-            sliderNyOffsetEl.addEventListener('input', () => {
-                updateNYSupportResistanceLines();
-            });
-        }
-
-        // Session change handling (NY, Euronext, Tokio)
-        function changeSession(newSession) {
-            if (!SESSIONS_CONFIG[newSession] || currentSession === newSession) return;
-            currentSession = newSession;
-
-            document.querySelectorAll('.session-btn').forEach(btn => {
-                if (btn.getAttribute('data-session') === newSession) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-
-            updateNYSupportResistanceLines(true);
-        }
-
-        document.querySelectorAll('.session-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const targetSession = e.currentTarget.getAttribute('data-session');
-                changeSession(targetSession);
-            });
-        });
 
         // Change candle timeframe
         function changeInterval(newInterval) {
@@ -1770,7 +1430,6 @@
             ema25Data = [];
 
             candleSeries.setData([]);
-            volumeSeries.setData([]);
             ema7Series.setData([]);
             ema25Series.setData([]);
 
