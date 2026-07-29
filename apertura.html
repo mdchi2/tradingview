@@ -660,12 +660,23 @@
             </div>
 
             <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Soporte y Resistencia (NY 10:30)</h3>
+                <h3 class="sidebar-section-title">Soporte y Resistencia (Apertura)</h3>
                 
+                <div class="slider-container" style="margin-bottom: 4px;">
+                    <div class="slider-header">
+                        <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Bolsa de Apertura</span>
+                    </div>
+                    <div class="btn-group grid-3" id="session_selector">
+                        <button class="btn-option session-btn active" data-session="ny" title="Nueva York (10:30 hs BsAs)">NY 10:30</button>
+                        <button class="btn-option session-btn" data-session="euronext" title="Euronext (04:00 hs BsAs)">EUR 04:00</button>
+                        <button class="btn-option session-btn" data-session="tokyo" title="Tokio (21:00 hs BsAs)">TOK 21:00</button>
+                    </div>
+                </div>
+
                 <div class="control-row">
                     <span class="control-label">
                         <span class="indicator-dot" style="background-color: #f0b90b;"></span>
-                        Niveles 10:30 NY
+                        Mostrar Niveles
                     </span>
                     <label class="switch">
                         <input type="checkbox" id="toggle_ny_sr" checked>
@@ -681,10 +692,10 @@
                     <input type="range" id="slider_ny_offset" class="range-slider" min="50" max="1000" step="25" value="200">
                 </div>
 
-                <!-- Tarjeta de Estado Niveles NY -->
+                <!-- Tarjeta de Estado Niveles -->
                 <div class="ny-status-card">
                     <div class="ny-status-header">
-                        <span>VELA APERTURA NY (10:30 hs)</span>
+                        <span id="ny_card_header">VELA APERTURA NY (10:30 hs)</span>
                         <span class="ny-status-badge active" id="ny_sr_badge" style="color: #00d2ff; border-color: rgba(0, 210, 255, 0.4); background: rgba(0, 210, 255, 0.15);">BUSCANDO...</span>
                     </div>
                     <div class="ny-grid">
@@ -693,7 +704,7 @@
                             <span id="ny_res_price" style="color: #00d2ff; font-size: 13px; font-weight: 700;">---.--</span>
                         </div>
                         <div class="ny-grid-item">
-                            <span class="ny-grid-label" style="color: #00d2ff;">NY Open (10:30)</span>
+                            <span class="ny-grid-label" id="ny_open_label" style="color: #00d2ff;">NY Open (10:30)</span>
                             <span id="ny_open_price" style="color: #00d2ff; font-size: 13px; font-weight: 700;">---.--</span>
                         </div>
                         <div class="ny-grid-item">
@@ -802,7 +813,7 @@
             renderCanvasOverlay();
         }
 
-        function centerOn1030Candle(candleTime) {
+        function centerOnSessionCandle(candleTime) {
             if (!chartData || chartData.length === 0 || !chart) return;
             const idx = chartData.findIndex(c => c.time === candleTime);
             if (idx !== -1) {
@@ -813,6 +824,7 @@
                 });
             }
         }
+        const centerOn1030Candle = centerOnSessionCandle;
 
         function getBsAsTime(unixSec) {
             const d = new Date(unixSec * 1000);
@@ -834,28 +846,83 @@
             };
         }
 
-        function findLatest1030Candle(data) {
+        const SESSIONS_CONFIG = {
+            ny: {
+                id: 'ny',
+                name: 'Nueva York',
+                shortName: 'NY',
+                hour: 10,
+                minute: 30,
+                label: 'NY OPEN 10:30',
+                fullLabel: 'VELA APERTURA NY (10:30 hs)',
+                gridLabel: 'NY Open (10:30)'
+            },
+            euronext: {
+                id: 'euronext',
+                name: 'Euronext',
+                shortName: 'EUR',
+                hour: 4,
+                minute: 0,
+                label: 'EURONEXT OPEN 04:00',
+                fullLabel: 'VELA APERTURA EURONEXT (04:00 hs)',
+                gridLabel: 'EUR Open (04:00)'
+            },
+            tokyo: {
+                id: 'tokyo',
+                name: 'Tokio',
+                shortName: 'TOK',
+                hour: 21,
+                minute: 0,
+                label: 'TOKIO OPEN 21:00',
+                fullLabel: 'VELA APERTURA TOKIO (21:00 hs)',
+                gridLabel: 'TOK Open (21:00)'
+            }
+        };
+
+        let currentSession = 'ny';
+
+        function findLatestSessionCandle(data, sessionKey) {
             if (!data || data.length === 0) return null;
-            // 1. Exact 10:30 candle match
+            const config = SESSIONS_CONFIG[sessionKey] || SESSIONS_CONFIG.ny;
+            const targetHour = config.hour;
+            const targetMinute = config.minute;
+
+            // 1. Exact match (hour and minute match in BsAs time)
             for (let i = data.length - 1; i >= 0; i--) {
                 const c = data[i];
                 const t = getBsAsTime(c.time);
-                if (t.hour === 10 && t.minute === 30) {
-                    return { candle: c, bsAsTime: t };
+                if (t.hour === targetHour && t.minute === targetMinute) {
+                    return { candle: c, bsAsTime: t, config: config };
                 }
             }
-            // 2. 10:00 hour candle for higher timeframes (e.g. 1h)
+
+            // 2. Hour match (for higher timeframes like 1h)
             for (let i = data.length - 1; i >= 0; i--) {
                 const c = data[i];
                 const t = getBsAsTime(c.time);
-                if (t.hour === 10) {
-                    return { candle: c, bsAsTime: t };
+                if (t.hour === targetHour) {
+                    return { candle: c, bsAsTime: t, config: config };
                 }
             }
-            return null;
+
+            // 3. Fallback: closest hour/minute candle
+            let bestMatch = null;
+            let minDiff = Infinity;
+            const searchLimit = Math.max(0, data.length - 200);
+            for (let i = data.length - 1; i >= searchLimit; i--) {
+                const c = data[i];
+                const t = getBsAsTime(c.time);
+                const diff = Math.abs((t.hour * 60 + t.minute) - (targetHour * 60 + targetMinute));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestMatch = { candle: c, bsAsTime: t, config: config };
+                }
+            }
+
+            return bestMatch;
         }
 
-        function updateNYSupportResistanceLines() {
+        function updateNYSupportResistanceLines(shouldCenter = false) {
             const toggleNySr = document.getElementById('toggle_ny_sr');
             if ((toggleNySr && !toggleNySr.checked) || !chartData || chartData.length === 0 || !candleSeries) {
                 if (candleSeries) candleSeries.setMarkers([]);
@@ -864,7 +931,7 @@
                 return;
             }
 
-            const resObj = findLatest1030Candle(chartData);
+            const resObj = findLatestSessionCandle(chartData, currentSession);
             if (!resObj) {
                 if (candleSeries) candleSeries.setMarkers([]);
                 updateNYCardUI(null);
@@ -872,12 +939,12 @@
                 return;
             }
 
-            const { candle, bsAsTime } = resObj;
-            const openPrice = candle.open;
-
+            const { candle } = resObj;
             candleSeries.setMarkers([]);
 
-            centerOn1030Candle(candle.time);
+            if (shouldCenter) {
+                centerOnSessionCandle(candle.time);
+            }
             renderCanvasOverlay();
         }
 
@@ -895,13 +962,13 @@
                 return;
             }
 
-            const resObj = findLatest1030Candle(chartData);
+            const resObj = findLatestSessionCandle(chartData, currentSession);
             if (!resObj) {
                 updateNYCardUI(null);
                 return;
             }
 
-            const { candle, bsAsTime } = resObj;
+            const { candle, bsAsTime, config } = resObj;
             const sliderOffset = document.getElementById('slider_ny_offset');
             const offset = sliderOffset ? parseInt(sliderOffset.value) : 200;
 
@@ -917,7 +984,7 @@
 
             ctx.save();
 
-            // 1. LÍMITE RANGO SUPERIOR (+200$) - Celeste / Left Text / Sin Fondo
+            // 1. LÍMITE RANGO SUPERIOR (+200$)
             if (yUpper !== null && yUpper >= 0 && yUpper <= height) {
                 ctx.strokeStyle = '#00d2ff';
                 ctx.lineWidth = 1.5;
@@ -932,7 +999,7 @@
                 ctx.fillText(`LÍMITE RANGO (+${offset}$): $${maxResLimit.toFixed(0)}`, 16, yUpper - 5);
             }
 
-            // 2. NY OPEN 10:30 - Celeste / Left Text / Sin Fondo
+            // 2. OPEN DE LA SESIÓN SELECCIONADA
             if (yOpen !== null && yOpen >= 0 && yOpen <= height) {
                 ctx.strokeStyle = '#00d2ff';
                 ctx.lineWidth = 2;
@@ -944,10 +1011,10 @@
 
                 ctx.font = "bold 13px 'JetBrains Mono', monospace";
                 ctx.fillStyle = '#00d2ff';
-                ctx.fillText(`NY OPEN 10:30: $${openPrice.toFixed(0)}`, 16, yOpen - 5);
+                ctx.fillText(`${config.label}: $${openPrice.toFixed(0)}`, 16, yOpen - 5);
             }
 
-            // 3. LÍMITE RANGO INFERIOR (-200$) - Celeste / Left Text / Sin Fondo
+            // 3. LÍMITE RANGO INFERIOR (-200$)
             if (yLower !== null && yLower >= 0 && yLower <= height) {
                 ctx.strokeStyle = '#00d2ff';
                 ctx.lineWidth = 1.5;
@@ -962,7 +1029,7 @@
                 ctx.fillText(`LÍMITE RANGO (-${offset}$): $${minSupLimit.toFixed(0)}`, 16, yLower + 16);
             }
 
-            // 4. FLECHA GRANDE CELESTE SOBRE VELA 10:30 (Sin Texto)
+            // 4. FLECHA GRANDE CELESTE SOBRE VELA DE APERTURA SELECCIONADA
             const xCandle = chart.timeScale().timeToCoordinate(candle.time);
             const yHigh = candleSeries.priceToCoordinate(candle.high);
 
@@ -1000,7 +1067,8 @@
                 maxResLimit: maxResLimit,
                 minSupLimit: minSupLimit,
                 offset: offset,
-                dateKey: bsAsTime.dateKey
+                dateKey: bsAsTime.dateKey,
+                config: config
             });
         }
 
@@ -1012,6 +1080,13 @@
             const limitsEl = document.getElementById('ny_limits_price');
             const offsetLabel = document.getElementById('label_ny_offset');
             const offsetValEls = document.querySelectorAll('.offset-val');
+            const cardHeaderEl = document.getElementById('ny_card_header');
+            const openLabelEl = document.getElementById('ny_open_label');
+
+            const currentConfig = (data && data.config) ? data.config : (SESSIONS_CONFIG[currentSession] || SESSIONS_CONFIG.ny);
+
+            if (cardHeaderEl) cardHeaderEl.innerText = currentConfig.fullLabel;
+            if (openLabelEl) openLabelEl.innerText = currentConfig.gridLabel;
 
             if (!data) {
                 if (badgeEl) { badgeEl.innerText = "INACTIVO"; badgeEl.className = "ny-status-badge"; }
@@ -1297,7 +1372,7 @@
                 if (toggleEma7 && toggleEma7.checked) ema7Series.setData(ema7Data);
                 if (toggleEma25 && toggleEma25.checked) ema25Series.setData(ema25Data);
 
-                updateNYSupportResistanceLines();
+                updateNYSupportResistanceLines(true);
 
                 if (chartData.length > 0) {
                     const latest = chartData[chartData.length - 1];
@@ -1641,6 +1716,29 @@
                 updateNYSupportResistanceLines();
             });
         }
+
+        // Session change handling (NY, Euronext, Tokio)
+        function changeSession(newSession) {
+            if (!SESSIONS_CONFIG[newSession] || currentSession === newSession) return;
+            currentSession = newSession;
+
+            document.querySelectorAll('.session-btn').forEach(btn => {
+                if (btn.getAttribute('data-session') === newSession) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            updateNYSupportResistanceLines(true);
+        }
+
+        document.querySelectorAll('.session-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetSession = e.currentTarget.getAttribute('data-session');
+                changeSession(targetSession);
+            });
+        });
 
         // Change candle timeframe
         function changeInterval(newInterval) {
