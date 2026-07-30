@@ -706,19 +706,21 @@
 
             const upperPrice = current5mOpenPrice + 200;
             const lowerPrice = current5mOpenPrice - 200;
+            const centerPrice = current5mOpenPrice;
 
             const yUpper = candleSeries.priceToCoordinate(upperPrice);
             const yLower = candleSeries.priceToCoordinate(lowerPrice);
+            const yCenter = candleSeries.priceToCoordinate(centerPrice);
 
             const chartPaneWidth = width - 75;
 
             ctx.save();
             ctx.strokeStyle = '#00d2ff';
-            ctx.lineWidth = 1.5;
             ctx.setLineDash([4, 4]);
 
             // Línea +200
             if (yUpper !== null && yUpper >= 0 && yUpper <= height) {
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.moveTo(0, yUpper);
                 ctx.lineTo(chartPaneWidth, yUpper);
@@ -729,8 +731,18 @@
                 ctx.fillText(`+200 ($${upperPrice.toFixed(1)})`, 16, yUpper - 5);
             }
 
+            // Línea Central (0 / Apertura 5m, sin texto, 1px)
+            if (yCenter !== null && yCenter >= 0 && yCenter <= height) {
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, yCenter);
+                ctx.lineTo(chartPaneWidth, yCenter);
+                ctx.stroke();
+            }
+
             // Línea -200
             if (yLower !== null && yLower >= 0 && yLower <= height) {
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.moveTo(0, yLower);
                 ctx.lineTo(chartPaneWidth, yLower);
@@ -1195,6 +1207,7 @@
         let current5mOpenPrice = null;
         let lineUpper200 = null;
         let lineLower200 = null;
+        let lineCenter = null;
 
         function get5mOpenPrice(data) {
             if (!data || data.length === 0) return null;
@@ -1225,6 +1238,7 @@
 
             const upperPrice = current5mOpenPrice + 200;
             const lowerPrice = current5mOpenPrice - 200;
+            const centerPrice = current5mOpenPrice;
 
             if (!lineUpper200) {
                 lineUpper200 = candleSeries.createPriceLine({
@@ -1237,6 +1251,19 @@
                 });
             } else {
                 lineUpper200.applyOptions({ price: upperPrice });
+            }
+
+            if (!lineCenter) {
+                lineCenter = candleSeries.createPriceLine({
+                    price: centerPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: false,
+                    title: '',
+                });
+            } else {
+                lineCenter.applyOptions({ price: centerPrice });
             }
 
             if (!lineLower200) {
