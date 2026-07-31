@@ -646,17 +646,17 @@
                 <div class="slider-container">
                     <div class="slider-header">
                         <span>Número de Filas (Bins)</span>
-                        <span id="label_bins">50</span>
+                        <span id="label_bins">100</span>
                     </div>
-                    <input type="range" id="slider_bins" class="range-slider" min="20" max="100" step="5" value="50">
+                    <input type="range" id="slider_bins" class="range-slider" min="20" max="100" step="5" value="100">
                 </div>
 
                 <div class="slider-container">
                     <div class="slider-header">
                         <span>Opacidad del Perfil</span>
-                        <span id="label_opacity">20%</span>
+                        <span id="label_opacity">10%</span>
                     </div>
-                    <input type="range" id="slider_opacity" class="range-slider" min="10" max="90" step="5" value="20">
+                    <input type="range" id="slider_opacity" class="range-slider" min="10" max="90" step="5" value="10">
                 </div>
 
                 <div class="slider-container">
@@ -670,9 +670,17 @@
                 </div>
 
                 <div class="control-row" style="margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 12px;">
+                    <span class="control-label">Línea de POC</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_poc_line">
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
                     <span class="control-label">Líneas de Picos</span>
                     <label class="switch">
-                        <input type="checkbox" id="toggle_peaks" checked>
+                        <input type="checkbox" id="toggle_peaks">
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -723,6 +731,7 @@
         const labelOpacity = document.getElementById('label_opacity');
         const alignLeftBtn = document.getElementById('align_left');
         const alignRightBtn = document.getElementById('align_right');
+        const togglePocLine = document.getElementById('toggle_poc_line');
         const togglePeaks = document.getElementById('toggle_peaks');
         const sliderPeaks = document.getElementById('slider_peaks');
         const labelPeaks = document.getElementById('label_peaks');
@@ -741,10 +750,11 @@
 
         // VPVR configuration state
         let vpvrEnabled = true;
-        let vpvrBins = 50;
-        let vpvrOpacity = 0.20;
+        let vpvrBins = 100;
+        let vpvrOpacity = 0.10;
         let vpvrAlignment = 'left'; // 'left' or 'right'
-        let peaksEnabled = true;
+        let pocLineEnabled = false;
+        let peaksEnabled = false;
         let peaksCount = 5;
 
         // Global data stores
@@ -875,7 +885,7 @@
                             }
 
                             // POC Line (Cyan dashed line, matching peaks format exactly)
-                            if (pocBinIdx !== -1) {
+                            if (pocLineEnabled && pocBinIdx !== -1) {
                                 const pocPriceCenter = minPrice + (pocBinIdx + 0.5) * step;
                                 const yPoc = candleSeries.priceToCoordinate(pocPriceCenter);
                                 if (yPoc !== null && yPoc >= 0 && yPoc <= height - 26) {
@@ -1662,6 +1672,13 @@
                 vpvrAlignment = 'right';
                 alignRightBtn.classList.add('active');
                 alignLeftBtn.classList.remove('active');
+                renderCanvasOverlay();
+            });
+        }
+
+        if (togglePocLine) {
+            togglePocLine.addEventListener('change', (e) => {
+                pocLineEnabled = e.target.checked;
                 renderCanvasOverlay();
             });
         }
