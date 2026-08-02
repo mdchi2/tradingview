@@ -604,7 +604,19 @@
                 </div>
             </div>
 
-
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Líneas de Referencia (±200)</h3>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Vela de Referencia</span>
+                    </div>
+                    <div class="btn-group grid-3">
+                        <button class="btn-option" id="ref_tf_5m">5m</button>
+                        <button class="btn-option active" id="ref_tf_15m">15m</button>
+                        <button class="btn-option" id="ref_tf_30m">30m</button>
+                    </div>
+                </div>
+            </div>
 
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Indicadores</h3>
@@ -951,11 +963,11 @@
                 pocValueEl.innerText = "---.--";
             }
 
-            // 2. Render 5m Open Reference Lines (+200, 0, -200)
-            if (current5mOpenPrice) {
-                const upperPrice = current5mOpenPrice + 200;
-                const lowerPrice = current5mOpenPrice - 200;
-                const centerPrice = current5mOpenPrice;
+            // 2. Render Open Reference Lines (+200, 0, -200)
+            if (currentRefOpenPrice) {
+                const upperPrice = currentRefOpenPrice + 200;
+                const lowerPrice = currentRefOpenPrice - 200;
+                const centerPrice = currentRefOpenPrice;
 
                 const yUpper = candleSeries.priceToCoordinate(upperPrice);
                 const yLower = candleSeries.priceToCoordinate(lowerPrice);
@@ -1071,11 +1083,11 @@
                 wickUpColor: '#0ecb81',
                 wickDownColor: '#f6465d',
                 autoscaleInfoProvider: () => {
-                    if (current5mOpenPrice && current5mOpenPrice > 0) {
+                    if (currentRefOpenPrice && currentRefOpenPrice > 0) {
                         return {
                             priceRange: {
-                                minValue: current5mOpenPrice - 300,
-                                maxValue: current5mOpenPrice + 300,
+                                minValue: currentRefOpenPrice - 300,
+                                maxValue: currentRefOpenPrice + 300,
                             },
                             margins: {
                                 above: 0,
@@ -1266,7 +1278,7 @@
                 if (toggleEma7 && toggleEma7.checked) ema7Series.setData(ema7Data);
                 if (toggleEma25 && toggleEma25.checked) ema25Series.setData(ema25Data);
 
-                update5mOpenAndLines();
+                updateRefOpenAndLines();
 
 
 
@@ -1452,24 +1464,29 @@
         }
 
         let lastPrice = 0;
-        let current5mOpenPrice = null;
+        let refCandleInterval = '15m'; // '15m' (defecto) o '5m'
+        let currentRefOpenPrice = null;
         let lineUpper200 = null;
         let lineLower200 = null;
         let lineCenter = null;
 
-        function get5mOpenPrice(data) {
+        function getRefOpenPrice(data, interval = refCandleInterval) {
             if (!data || data.length === 0) return null;
             const latest = data[data.length - 1];
-            const fiveMinStartSec = Math.floor(latest.time / 300) * 300;
+            let periodSec = 900;
+            if (interval === '5m') periodSec = 300;
+            else if (interval === '15m') periodSec = 900;
+            else if (interval === '30m') periodSec = 1800;
+            const startSec = Math.floor(latest.time / periodSec) * periodSec;
 
             for (let i = data.length - 1; i >= 0; i--) {
-                if (data[i].time === fiveMinStartSec) {
+                if (data[i].time === startSec) {
                     return data[i].open;
                 }
             }
 
             for (let i = data.length - 1; i >= 0; i--) {
-                if (data[i].time <= fiveMinStartSec) {
+                if (data[i].time <= startSec) {
                     return data[i].open;
                 }
             }
@@ -1477,16 +1494,16 @@
             return latest.open;
         }
 
-        function update5mOpenAndLines() {
+        function updateRefOpenAndLines() {
             if (!chartData || chartData.length === 0) return;
             
-            const new5mOpen = get5mOpenPrice(chartData);
-            if (!new5mOpen || isNaN(new5mOpen)) return;
-            current5mOpenPrice = new5mOpen;
+            const newRefOpen = getRefOpenPrice(chartData, refCandleInterval);
+            if (!newRefOpen || isNaN(newRefOpen)) return;
+            currentRefOpenPrice = newRefOpen;
 
-            const upperPrice = current5mOpenPrice + 200;
-            const lowerPrice = current5mOpenPrice - 200;
-            const centerPrice = current5mOpenPrice;
+            const upperPrice = currentRefOpenPrice + 200;
+            const lowerPrice = currentRefOpenPrice - 200;
+            const centerPrice = currentRefOpenPrice;
 
             if (!lineUpper200) {
                 lineUpper200 = candleSeries.createPriceLine({
@@ -1549,7 +1566,7 @@
             }
             lastPrice = price;
 
-            update5mOpenAndLines();
+            updateRefOpenAndLines();
 
             setTimeout(() => {
                 if (livePriceEl) livePriceEl.style.textShadow = "none";
@@ -1614,7 +1631,7 @@
                 ema25Series.update(ema25Data[ema25Data.length - 1]);
             }
 
-            update5mOpenAndLines();
+            updateRefOpenAndLines();
         }
 
         // Toggle Switch & Slider Listeners
@@ -1734,6 +1751,27 @@
                 }
             });
         }
+
+        const refTf5mBtn = document.getElementById('ref_tf_5m');
+        const refTf15mBtn = document.getElementById('ref_tf_15m');
+        const refTf30mBtn = document.getElementById('ref_tf_30m');
+
+        const refBtns = [
+            { btn: refTf5mBtn, tf: '5m' },
+            { btn: refTf15mBtn, tf: '15m' },
+            { btn: refTf30mBtn, tf: '30m' }
+        ];
+
+        refBtns.forEach(item => {
+            if (item.btn) {
+                item.btn.addEventListener('click', () => {
+                    refBtns.forEach(i => i.btn && i.btn.classList.remove('active'));
+                    item.btn.classList.add('active');
+                    refCandleInterval = item.tf;
+                    updateRefOpenAndLines();
+                });
+            }
+        });
 
         // Change candle timeframe
         function changeInterval(newInterval) {
