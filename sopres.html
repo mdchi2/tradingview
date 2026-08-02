@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTC/USDT Trading Dashboard</title>
+    <title>BTC/USD Margex Trading Dashboard with VPVR</title>
     <!-- Google Fonts for premium trading look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -156,6 +156,16 @@
             height: 100%;
         }
 
+        #vpvr_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
         /* Sidebar Control Panel */
         .control-sidebar {
             width: 280px;
@@ -163,121 +173,17 @@
             border-left: 1px solid var(--panel-border);
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            gap: 20px;
+            padding: 24px;
+            gap: 24px;
             overflow-y: auto;
             z-index: 90;
             backdrop-filter: blur(10px);
         }
 
-        /* Multi-Timeframe Matrix Styles */
-        .tf-matrix {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .tf-row {
-            display: grid;
-            grid-template-columns: 42px 1fr;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 6px;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .tf-row:hover, .tf-row.active {
-            background: rgba(240, 185, 11, 0.08);
-            border-color: rgba(240, 185, 11, 0.3);
-        }
-
-        .tf-name {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .tf-trend {
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .tf-trend.bullish {
-            color: var(--binance-green);
-        }
-
-        .tf-trend.bearish {
-            color: var(--binance-red);
-        }
-
-        .tf-trend.neutral {
-            color: var(--binance-yellow);
-        }
-
-        .signal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .signal-title {
-            font-size: 13px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .rr-badge {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            background: rgba(255, 255, 255, 0.12);
-            color: var(--text-primary);
-        }
-
-        .signal-levels {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px 16px;
-            font-size: 11px;
-        }
-
-        .level-item {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
-
-        .level-lbl {
-            color: var(--text-secondary);
-            font-size: 10px;
-            text-transform: uppercase;
-        }
-
-        .level-val {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        .level-val.entry { color: var(--binance-yellow); }
-        .level-val.sl { color: var(--binance-red); }
-        .level-val.tp { color: var(--binance-green); }
-
         .sidebar-section {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
 
         .sidebar-section-title {
@@ -465,84 +371,167 @@
             border-left: 3px solid var(--binance-yellow);
         }
 
-        /* SR Overlay Labels */
-        .sr-overlay-label {
-            position: absolute;
-            left: 12px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
-            font-weight: 700;
-            line-height: 1;
-            transform: translateY(-50%);
-            white-space: nowrap;
-            background-color: #0c0d12;
-            padding: 2px 6px 2px 0px;
-            border-radius: 2px;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-            pointer-events: none;
-            user-select: none;
-            z-index: 2;
-        }
-        .sr-overlay-label.res,
-        .sr-overlay-label.sop {
-            color: var(--text-primary);
-        }
-        .sr-overlay-label.current {
-            font-size: 15px;
-            font-weight: 800;
-        }
-
-        /* Chart Horizontal Timeframe Analysis Bar */
-        .tf-chart-bar {
+        /* Top-Left Timeframe Trend Bar */
+        .tf-trend-bar {
             position: absolute;
             top: 12px;
             left: 12px;
+            z-index: 50;
             display: flex;
-            flex-direction: row;
             align-items: center;
-            justify-content: flex-start;
             gap: 6px;
-            z-index: 20;
-            pointer-events: auto;
+            background: rgba(11, 14, 23, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
-        .tf-chart-badge {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background-color: rgba(255, 255, 255, 0.05);
+        .tf-trend-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: var(--text-secondary);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
         }
 
-        .tf-chart-badge.bullish {
+        .tf-trend-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tf-trend-item.active {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+        }
+
+        .tf-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--text-secondary);
+            display: inline-block;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Trend Status Styles */
+        .tf-trend-item.bullish {
+            color: var(--binance-green);
+            background: rgba(14, 203, 129, 0.12);
+            border-color: rgba(14, 203, 129, 0.3);
+        }
+        .tf-trend-item.bullish .tf-dot {
             background-color: var(--binance-green);
-            color: #080a0f;
-            border-color: var(--binance-green);
+            box-shadow: 0 0 6px var(--binance-green);
         }
 
-        .tf-chart-badge.bearish {
+        .tf-trend-item.bearish {
+            color: var(--binance-red);
+            background: rgba(246, 70, 93, 0.12);
+            border-color: rgba(246, 70, 93, 0.3);
+        }
+        .tf-trend-item.bearish .tf-dot {
             background-color: var(--binance-red);
-            color: #ffffff;
-            border-color: var(--binance-red);
+            box-shadow: 0 0 6px var(--binance-red);
         }
 
-        .tf-chart-badge.neutral {
+        .tf-trend-item.consolidation {
+            color: var(--binance-yellow);
+            background: rgba(240, 185, 11, 0.12);
+            border-color: rgba(240, 185, 11, 0.3);
+        }
+        .tf-trend-item.consolidation .tf-dot {
             background-color: var(--binance-yellow);
-            color: #080a0f;
-            border-color: var(--binance-yellow);
+            box-shadow: 0 0 6px var(--binance-yellow);
         }
 
-        .tf-chart-badge.active {
-            outline: 2px solid #ffffff;
-            outline-offset: 1px;
+        /* Toast Alert Container */
+        .alert-toast-container {
+            position: absolute;
+            top: 55px;
+            right: 20px;
+            z-index: 120;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+            max-width: 320px;
         }
+
+        .alert-toast {
+            background: rgba(15, 20, 32, 0.95);
+            border: 1px solid var(--panel-border);
+            border-left: 4px solid var(--binance-yellow);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            font-size: 13px;
+            animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .alert-toast.long {
+            border-left-color: var(--binance-green);
+            background: linear-gradient(135deg, rgba(14, 203, 129, 0.15), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.short {
+            border-left-color: var(--binance-red);
+            background: linear-gradient(135deg, rgba(246, 70, 93, 0.15), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.tp {
+            border-left-color: #00d2ff;
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.18), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.sl {
+            border-left-color: var(--binance-red);
+            background: linear-gradient(135deg, rgba(246, 70, 93, 0.2), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .alert-toast-body {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .alert-toast-close {
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+
     </style>
 </head>
 <body>
@@ -552,8 +541,8 @@
         <div class="logo-section">
             <div class="coin-icon">₿</div>
             <div class="coin-name">
-                <div class="coin-title">BTCUSDT <span>Binance Live</span></div>
-                <div class="coin-subtitle">Intervalo: 1 Minuto 1m</div>
+                <div class="coin-title">BTCUSD <span>Margex Live</span></div>
+                <div class="coin-subtitle">Intervalo: 1 Minuto (1m)</div>
             </div>
         </div>
 
@@ -574,6 +563,10 @@
                 <span class="stat-label">Volumen 24h (USDT)</span>
                 <span class="stat-value" id="volume_24h">---.-- M</span>
             </div>
+            <div class="stat-item">
+                <span class="stat-label" style="color: #00d2ff;">POC Activo</span>
+                <span class="stat-value" id="poc_value" style="color: #00d2ff;">---.--</span>
+            </div>
         </div>
     </header>
 
@@ -581,17 +574,19 @@
     <div class="workspace">
         <!-- Chart Area -->
         <div class="chart-wrapper">
-            <div id="tradingview_chart"></div>
-            <div class="tf-chart-bar" id="tf_chart_bar">
-                <div class="tf-chart-badge neutral active" data-tf="1m">1m</div>
-                <div class="tf-chart-badge neutral" data-tf="5m">5m</div>
-                <div class="tf-chart-badge neutral" data-tf="15m">15m</div>
-                <div class="tf-chart-badge neutral" data-tf="30m">30m</div>
-                <div class="tf-chart-badge neutral" data-tf="1h">1h</div>
-                <div class="tf-chart-badge neutral" data-tf="4h">4h</div>
-                <div class="tf-chart-badge neutral" data-tf="1d">1d</div>
+            <!-- Top-Left Multi-Timeframe Trend Bar -->
+            <div class="tf-trend-bar" id="tf_trend_bar">
+                <button class="tf-trend-item interval-btn active" data-interval="1m"><span class="tf-dot"></span>1m</button>
+                <button class="tf-trend-item interval-btn" data-interval="5m"><span class="tf-dot"></span>5m</button>
+                <button class="tf-trend-item interval-btn" data-interval="15m"><span class="tf-dot"></span>15m</button>
+                <button class="tf-trend-item interval-btn" data-interval="30m"><span class="tf-dot"></span>30m</button>
+                <button class="tf-trend-item interval-btn" data-interval="1h"><span class="tf-dot"></span>1h</button>
+                <button class="tf-trend-item interval-btn" data-interval="4h"><span class="tf-dot"></span>4h</button>
+                <button class="tf-trend-item interval-btn" data-interval="1d"><span class="tf-dot"></span>1d</button>
             </div>
-            <div id="sr_labels_overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; overflow: hidden;"></div>
+            <!-- TradingView Chart Container -->
+            <div id="tradingview_chart"></div>
+            <canvas id="vpvr_canvas"></canvas>
         </div>
 
         <!-- Sidebar Panel -->
@@ -610,35 +605,15 @@
             </div>
 
             <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Análisis por Temporalidad</h3>
-                <div class="tf-matrix" id="tf_matrix">
-                    <div class="tf-row active" data-tf="1m">
-                        <span class="tf-name">1m</span>
-                        <span class="tf-trend neutral">Cargando...</span>
+                <h3 class="sidebar-section-title">Líneas de Referencia (±200)</h3>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Vela de Referencia</span>
                     </div>
-                    <div class="tf-row" data-tf="5m">
-                        <span class="tf-name">5m</span>
-                        <span class="tf-trend neutral">Cargando...</span>
-                    </div>
-                    <div class="tf-row" data-tf="15m">
-                        <span class="tf-name">15m</span>
-                        <span class="tf-trend neutral">Cargando...</span>
-                    </div>
-                    <div class="tf-row" data-tf="30m">
-                        <span class="tf-name">30m</span>
-                        <span class="tf-trend neutral">Cargando...</span>
-                    </div>
-                    <div class="tf-row" data-tf="1h">
-                        <span class="tf-name">1h</span>
-                        <span class="tf-trend neutral">Cargando...</span>
-                    </div>
-                    <div class="tf-row" data-tf="4h">
-                        <span class="tf-name">4h</span>
-                        <span class="tf-trend neutral">Cargando...</span>
-                    </div>
-                    <div class="tf-row" data-tf="1d">
-                        <span class="tf-name">1d</span>
-                        <span class="tf-trend neutral">Cargando...</span>
+                    <div class="btn-group grid-3">
+                        <button class="btn-option" id="ref_tf_5m">5m</button>
+                        <button class="btn-option active" id="ref_tf_15m">15m</button>
+                        <button class="btn-option" id="ref_tf_30m">30m</button>
                     </div>
                 </div>
             </div>
@@ -646,6 +621,28 @@
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Indicadores</h3>
                 
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #f0b90b;"></span>
+                        Sop / Res 5m
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_sr_5m" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #ff9800;"></span>
+                        Sop / Res 15m
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_sr_15m" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
                 <div class="control-row">
                     <span class="control-label">
                         <span class="indicator-dot" style="background-color: #FF0000;"></span>
@@ -667,22 +664,84 @@
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
+            </div>
 
-                <div class="control-row" style="margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
-                    <span class="control-label">
-                        <span class="indicator-dot" style="background: linear-gradient(135deg, #0ecb81, #f0b90b, #f6465d);"></span>
-                        Sop y Res
-                    </span>
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Perfil de Volumen (VPVR)</h3>
+                
+                <div class="control-row">
+                    <span class="control-label">Activar VPVR</span>
                     <label class="switch">
-                        <input type="checkbox" id="toggle_sr_lines" checked>
+                        <input type="checkbox" id="toggle_vpvr" checked>
                         <span class="slider-toggle"></span>
                     </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Número de Filas (Bins)</span>
+                        <span id="label_bins">100</span>
+                    </div>
+                    <input type="range" id="slider_bins" class="range-slider" min="20" max="100" step="5" value="100">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Opacidad del Perfil</span>
+                        <span id="label_opacity">10%</span>
+                    </div>
+                    <input type="range" id="slider_opacity" class="range-slider" min="10" max="90" step="5" value="10">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Alineación</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-option active" id="align_left">Izquierda</button>
+                        <button class="btn-option" id="align_right">Derecha</button>
+                    </div>
+                </div>
+
+                <div class="control-row" style="margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 12px;">
+                    <span class="control-label">Línea de POC</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_poc_line">
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">Líneas de Picos</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_peaks">
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Cantidad de Picos</span>
+                        <span id="label_peaks">5</span>
+                    </div>
+                    <input type="range" id="slider_peaks" class="range-slider" min="1" max="5" step="1" value="5">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Calibración Margex</h3>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Ajuste de Precio ($ USD)</span>
+                        <span id="label_price_offset">0 $</span>
+                    </div>
+                    <input type="range" id="slider_price_offset" class="range-slider" min="-100" max="100" step="1" value="0">
                 </div>
             </div>
 
             <div class="conn-status">
                 <div class="status-pulse" id="connection_dot"></div>
-                <span id="connection_text">Conectando a Binance Stream...</span>
+                <span id="connection_text">Conectando a Margex...</span>
             </div>
         </aside>
     </div>
@@ -696,13 +755,24 @@
         const priceChangeEl = document.getElementById('price_change');
         const priceRangeEl = document.getElementById('price_range');
         const volume24hEl = document.getElementById('volume_24h');
+        const pocValueEl = document.getElementById('poc_value');
         const toggleEma7 = document.getElementById('toggle_ema7');
         const toggleEma25 = document.getElementById('toggle_ema25');
+        const toggleVpvr = document.getElementById('toggle_vpvr');
+        const sliderBins = document.getElementById('slider_bins');
+        const sliderOpacity = document.getElementById('slider_opacity');
+        const labelBins = document.getElementById('label_bins');
+        const labelOpacity = document.getElementById('label_opacity');
+        const alignLeftBtn = document.getElementById('align_left');
+        const alignRightBtn = document.getElementById('align_right');
+        const togglePocLine = document.getElementById('toggle_poc_line');
+        const togglePeaks = document.getElementById('toggle_peaks');
+        const sliderPeaks = document.getElementById('slider_peaks');
+        const labelPeaks = document.getElementById('label_peaks');
         const connectionDot = document.getElementById('connection_dot');
         const connectionText = document.getElementById('connection_text');
-
-        // Price Action & Signals DOM Elements
-        const toggleSrLines = document.getElementById('toggle_sr_lines');
+        const sliderPriceOffset = document.getElementById('slider_price_offset');
+        const labelPriceOffset = document.getElementById('label_price_offset');
 
         // Global Chart variables
         let chart;
@@ -711,50 +781,348 @@
         let ema7Series;
         let ema25Series;
         let ws;
-        let priceLines = [];
+
+        // VPVR configuration state
+        let vpvrEnabled = true;
+        let vpvrBins = 100;
+        let vpvrOpacity = 0.10;
+        let vpvrAlignment = 'left'; // 'left' or 'right'
+        let pocLineEnabled = false;
+        let peaksEnabled = false;
+        let peaksCount = 5;
 
         // Global data stores
         let chartData = [];
         let ema7Data = [];
         let ema25Data = [];
         let currentInterval = '1m';
-        let allTfLevels = {}; // Stores { [tf]: { trendText, trendClass, tp, sl } }
+        // Canvas Setup
+        let canvas = null;
+        let ctx = null;
 
-        const TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h', '4h', '1d'];
+        function initCanvas() {
+            canvas = document.getElementById('vpvr_canvas');
+            if (canvas) {
+                ctx = canvas.getContext('2d');
+                resizeCanvas();
+            }
+        }
 
-        // Binance Helper Fetch with Fallbacks
-        async function fetchKlineData(interval, limit = 50) {
-            const endpoints = [
-                `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`,
-                `https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`,
-                `https://api1.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`
-            ];
+        function resizeCanvas() {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            if (ctx) ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            renderCanvasOverlay();
+        }
 
-            for (const url of endpoints) {
-                try {
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (Array.isArray(data) && data.length > 0) {
-                            return data;
+        function renderCanvasOverlay() {
+            if (!canvas || !ctx || !candleSeries) return;
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+            const chartPaneWidth = width - 75;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // 1. Render VPVR (Volume Profile Visible Range) if enabled
+            if (vpvrEnabled && chartData.length > 0) {
+                const logicalRange = chart ? chart.timeScale().getVisibleLogicalRange() : null;
+                if (logicalRange) {
+                    const fromIdx = Math.max(0, Math.floor(logicalRange.from));
+                    const toIdx = Math.min(chartData.length - 1, Math.ceil(logicalRange.to));
+
+                    const visibleData = [];
+                    for (let i = fromIdx; i <= toIdx; i++) {
+                        if (chartData[i]) visibleData.push(chartData[i]);
+                    }
+
+                    if (visibleData.length > 0) {
+                        let minPrice = Infinity;
+                        let maxPrice = -Infinity;
+                        for (const d of visibleData) {
+                            if (d.low < minPrice) minPrice = d.low;
+                            if (d.high > maxPrice) maxPrice = d.high;
+                        }
+
+                        if (minPrice !== Infinity && maxPrice !== -Infinity && maxPrice > minPrice) {
+                            const step = (maxPrice - minPrice) / vpvrBins;
+                            const buyBins = Array(vpvrBins).fill(0);
+                            const sellBins = Array(vpvrBins).fill(0);
+                            const totalBins = Array(vpvrBins).fill(0);
+
+                            for (const d of visibleData) {
+                                const lowBin = Math.floor((d.low - minPrice) / step);
+                                const highBin = Math.floor((d.high - minPrice) / step);
+                                const rangeSpan = Math.max(1, highBin - lowBin + 1);
+                                const volShare = d.volume / rangeSpan;
+                                const isUp = d.close >= d.open;
+
+                                for (let b = Math.max(0, lowBin); b <= Math.min(vpvrBins - 1, highBin); b++) {
+                                    if (isUp) buyBins[b] += volShare;
+                                    else sellBins[b] += volShare;
+                                    totalBins[b] += volShare;
+                                }
+                            }
+
+                            let maxVol = 0;
+                            let pocBinIdx = -1;
+                            for (let i = 0; i < vpvrBins; i++) {
+                                if (totalBins[i] > maxVol) {
+                                    maxVol = totalBins[i];
+                                    pocBinIdx = i;
+                                }
+                            }
+
+                            if (pocBinIdx !== -1) {
+                                const pocPrice = minPrice + (pocBinIdx + 0.5) * step;
+                                if (pocValueEl) {
+                                    pocValueEl.innerText = pocPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                }
+                            }
+
+                            const maxBarWidth = chartPaneWidth * 0.25;
+
+                            for (let i = 0; i < vpvrBins; i++) {
+                                const totalVal = totalBins[i];
+                                if (totalVal === 0) continue;
+
+                                const priceStart = minPrice + i * step;
+                                const priceEnd = priceStart + step;
+
+                                const yStart = candleSeries.priceToCoordinate(priceStart);
+                                const yEnd = candleSeries.priceToCoordinate(priceEnd);
+
+                                if (yStart === null || yEnd === null) continue;
+
+                                const yTop = Math.min(yStart, yEnd);
+                                const yBottom = Math.max(yStart, yEnd);
+                                const barHeight = Math.max(1, yBottom - yTop - 0.5);
+
+                                if (yTop < 0 || yBottom > height - 26) continue;
+
+                                const barWidth = (totalVal / maxVol) * maxBarWidth;
+                                const buyWidth = (buyBins[i] / totalVal) * barWidth;
+                                const sellWidth = (sellBins[i] / totalVal) * barWidth;
+
+                                let xStart = 0;
+                                if (vpvrAlignment === 'right') {
+                                    xStart = chartPaneWidth - barWidth;
+                                }
+
+                                ctx.fillStyle = `rgba(14, 203, 129, ${vpvrOpacity})`;
+                                ctx.fillRect(xStart, yTop, buyWidth, barHeight);
+
+                                ctx.fillStyle = `rgba(246, 70, 93, ${vpvrOpacity})`;
+                                ctx.fillRect(xStart + buyWidth, yTop, sellWidth, barHeight);
+                            }
+
+                            // POC Line (Cyan dashed line, matching peaks format exactly)
+                            if (pocLineEnabled && pocBinIdx !== -1) {
+                                const pocPriceCenter = minPrice + (pocBinIdx + 0.5) * step;
+                                const yPoc = candleSeries.priceToCoordinate(pocPriceCenter);
+                                if (yPoc !== null && yPoc >= 0 && yPoc <= height - 26) {
+                                    ctx.save();
+                                    ctx.strokeStyle = 'rgba(0, 210, 255, 0.4)';
+                                    ctx.lineWidth = 1;
+                                    ctx.setLineDash([3, 3]);
+                                    ctx.beginPath();
+                                    ctx.moveTo(0, yPoc);
+                                    ctx.lineTo(chartPaneWidth, yPoc);
+                                    ctx.stroke();
+                                    ctx.restore();
+
+                                    ctx.font = "bold 13px 'JetBrains Mono', monospace";
+                                    ctx.fillStyle = 'rgba(0, 210, 255, 0.85)';
+                                    ctx.fillText("POC: " + Math.round(pocPriceCenter).toLocaleString('en-US'), 10, yPoc - 3);
+                                }
+                            }
+
+                            // Peak Lines
+                            if (peaksEnabled) {
+                                const peaks = [];
+                                for (let i = 0; i < vpvrBins; i++) {
+                                    const val = totalBins[i];
+                                    if (val === 0) continue;
+                                    const prev = i > 0 ? totalBins[i - 1] : 0;
+                                    const next = i < vpvrBins - 1 ? totalBins[i + 1] : 0;
+                                    if (val > prev && val > next) {
+                                        peaks.push({
+                                            index: i,
+                                            volume: val,
+                                            price: minPrice + (i + 0.5) * step
+                                        });
+                                    }
+                                }
+
+                                peaks.sort((a, b) => b.volume - a.volume);
+                                const otherPeaks = peaks.filter(p => p.index !== pocBinIdx).slice(0, peaksCount);
+
+                                otherPeaks.forEach(peak => {
+                                    const yPeak = candleSeries.priceToCoordinate(peak.price);
+                                    if (yPeak !== null && yPeak >= 0 && yPeak <= height - 26) {
+                                        ctx.save();
+                                        ctx.strokeStyle = 'rgba(0, 210, 255, 0.4)';
+                                        ctx.lineWidth = 1;
+                                        ctx.setLineDash([3, 3]);
+                                        ctx.beginPath();
+                                        ctx.moveTo(0, yPeak);
+                                        ctx.lineTo(chartPaneWidth, yPeak);
+                                        ctx.stroke();
+                                        ctx.restore();
+
+                                        ctx.font = "bold 13px 'JetBrains Mono', monospace";
+                                        ctx.fillStyle = 'rgba(0, 210, 255, 0.85)';
+                                        ctx.fillText("Pico: " + Math.round(peak.price).toLocaleString('en-US'), 10, yPeak - 3);
+                                    }
+                                });
+                            }
                         }
                     }
-                } catch (e) {
-                    // Try next endpoint
+                }
+            } else if (pocValueEl) {
+                pocValueEl.innerText = "---.--";
+            }
+
+            // 2. Render Open Reference Lines (+200, 0, -200)
+            if (currentRefOpenPrice) {
+                const upperPrice = currentRefOpenPrice + 200;
+                const lowerPrice = currentRefOpenPrice - 200;
+                const centerPrice = currentRefOpenPrice;
+
+                const yUpper = candleSeries.priceToCoordinate(upperPrice);
+                const yLower = candleSeries.priceToCoordinate(lowerPrice);
+                const yCenter = candleSeries.priceToCoordinate(centerPrice);
+
+                ctx.save();
+                ctx.strokeStyle = '#00d2ff';
+                ctx.setLineDash([4, 4]);
+
+                // Línea +200
+                if (yUpper !== null && yUpper >= 0 && yUpper <= height) {
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yUpper);
+                    ctx.lineTo(chartPaneWidth, yUpper);
+                    ctx.stroke();
+
+                    ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#00d2ff';
+                    ctx.fillText(`+200 ($${upperPrice.toFixed(1)})`, 16, yUpper - 5);
+                }
+
+                // Línea Central (0 / Apertura 5m, sin texto, 1px)
+                if (yCenter !== null && yCenter >= 0 && yCenter <= height) {
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yCenter);
+                    ctx.lineTo(chartPaneWidth, yCenter);
+                    ctx.stroke();
+                }
+
+                // Línea -200
+                if (yLower !== null && yLower >= 0 && yLower <= height) {
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yLower);
+                    ctx.lineTo(chartPaneWidth, yLower);
+                    ctx.stroke();
+
+                    ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#00d2ff';
+                    ctx.fillText(`-200 ($${lowerPrice.toFixed(1)})`, 16, yLower + 15);
+                }
+
+                ctx.restore();
+            }
+
+            // 3. Render 5m Support & Resistance Lines
+            if (sr5mEnabled) {
+                if (current5mResistance !== null) {
+                    const yRes = candleSeries.priceToCoordinate(current5mResistance);
+                    if (yRes !== null && yRes >= 0 && yRes <= height) {
+                        ctx.save();
+                        ctx.strokeStyle = '#f0b90b';
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(0, yRes);
+                        ctx.lineTo(chartPaneWidth, yRes);
+                        ctx.stroke();
+
+                        ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = '#f0b90b';
+                        ctx.fillText(`Res 5m: $${Math.round(current5mResistance).toLocaleString('en-US')}`, 16, yRes - 5);
+                        ctx.restore();
+                    }
+                }
+
+                if (current5mSupport !== null) {
+                    const ySup = candleSeries.priceToCoordinate(current5mSupport);
+                    if (ySup !== null && ySup >= 0 && ySup <= height) {
+                        ctx.save();
+                        ctx.strokeStyle = '#f0b90b';
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(0, ySup);
+                        ctx.lineTo(chartPaneWidth, ySup);
+                        ctx.stroke();
+
+                        ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = '#f0b90b';
+                        ctx.fillText(`Sop 5m: $${Math.round(current5mSupport).toLocaleString('en-US')}`, 16, ySup + 15);
+                        ctx.restore();
+                    }
                 }
             }
-            return null;
+
+            // 4. Render 15m Support & Resistance Lines
+            if (sr15mEnabled) {
+                if (current15mResistance !== null) {
+                    const yRes = candleSeries.priceToCoordinate(current15mResistance);
+                    if (yRes !== null && yRes >= 0 && yRes <= height) {
+                        ctx.save();
+                        ctx.strokeStyle = '#ff9800';
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(0, yRes);
+                        ctx.lineTo(chartPaneWidth, yRes);
+                        ctx.stroke();
+
+                        ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = '#ff9800';
+                        ctx.fillText(`Res 15m: $${Math.round(current15mResistance).toLocaleString('en-US')}`, 180, yRes - 5);
+                        ctx.restore();
+                    }
+                }
+
+                if (current15mSupport !== null) {
+                    const ySup = candleSeries.priceToCoordinate(current15mSupport);
+                    if (ySup !== null && ySup >= 0 && ySup <= height) {
+                        ctx.save();
+                        ctx.strokeStyle = '#ff9800';
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(0, ySup);
+                        ctx.lineTo(chartPaneWidth, ySup);
+                        ctx.stroke();
+
+                        ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = '#ff9800';
+                        ctx.fillText(`Sop 15m: $${Math.round(current15mSupport).toLocaleString('en-US')}`, 180, ySup + 15);
+                        ctx.restore();
+                    }
+                }
+            }
         }
 
         // Initialize Lightweight Chart
         function initChart() {
             const chartDiv = document.getElementById('tradingview_chart');
-            if (!chartDiv || typeof LightweightCharts === 'undefined') return;
-
-            if (chart) {
-                try { chart.remove(); } catch(e) {}
-            }
-
             chart = LightweightCharts.createChart(chartDiv, {
                 layout: {
                     background: { type: 'solid', color: '#0c0d12' },
@@ -769,9 +1137,11 @@
                 rightPriceScale: {
                     borderColor: 'rgba(255, 255, 255, 0.08)',
                     scaleMargins: {
-                        top: 0.1,
-                        bottom: 0.15
-                    }
+                        top: 0,
+                        bottom: 0
+                    },
+                    alignLabels: false,
+                    entireTextOnly: false
                 },
                 timeScale: {
                     borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -781,36 +1151,18 @@
                     tickMarkFormatter: (time, tickMarkType, locale) => {
                         const date = new Date(time * 1000);
                         const options = { timeZone: 'America/Argentina/Buenos_Aires' };
-                        if (tickMarkType === 0) {
-                            return date.toLocaleDateString('es-AR', { ...options, year: 'numeric' });
-                        }
-                        if (tickMarkType === 1) {
-                            return date.toLocaleDateString('es-AR', { ...options, month: 'short' });
-                        }
-                        if (tickMarkType === 2) {
-                            return date.toLocaleDateString('es-AR', { ...options, day: 'numeric' });
-                        }
-                        if (tickMarkType === 3) {
-                            return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', hour12: false });
-                        }
-                        if (tickMarkType === 4) {
-                            return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-                        }
+                        if (tickMarkType === 0) return date.toLocaleDateString('es-AR', { ...options, year: 'numeric' });
+                        if (tickMarkType === 1) return date.toLocaleDateString('es-AR', { ...options, month: 'short' });
+                        if (tickMarkType === 2) return date.toLocaleDateString('es-AR', { ...options, day: 'numeric' });
+                        if (tickMarkType === 3) return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', hour12: false });
+                        if (tickMarkType === 4) return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
                         return null;
                     }
                 },
                 crosshair: {
                     mode: LightweightCharts.CrosshairMode.Normal,
-                    vertLine: {
-                        color: 'rgba(255, 255, 255, 0.15)',
-                        width: 1,
-                        style: LightweightCharts.LineStyle.Dashed
-                    },
-                    horzLine: {
-                        color: 'rgba(255, 255, 255, 0.15)',
-                        width: 1,
-                        style: LightweightCharts.LineStyle.Dashed
-                    }
+                    vertLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed },
+                    horzLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed }
                 },
                 localization: {
                     locale: 'es-AR',
@@ -833,436 +1185,781 @@
                 downColor: '#f6465d',
                 borderVisible: false,
                 wickUpColor: '#0ecb81',
-                wickDownColor: '#f6465d'
-            });
-
-            // Add Volume series as overlay
-            volumeSeries = chart.addHistogramSeries({
-                color: 'rgba(14, 203, 129, 0.2)',
-                priceFormat: { type: 'volume' },
-                priceScaleId: '',
-            });
-            volumeSeries.priceScale().applyOptions({
-                scaleMargins: {
-                    top: 0.8,
-                    bottom: 0
+                wickDownColor: '#f6465d',
+                autoscaleInfoProvider: () => {
+                    if (currentRefOpenPrice && currentRefOpenPrice > 0) {
+                        return {
+                            priceRange: {
+                                minValue: currentRefOpenPrice - 300,
+                                maxValue: currentRefOpenPrice + 300,
+                            },
+                            margins: {
+                                above: 0,
+                                below: 0,
+                            },
+                        };
+                    }
+                    return null;
                 }
             });
+
+
 
             // Add EMA series
             ema7Series = chart.addLineSeries({
                 color: '#FF0000',
                 lineWidth: 1.5,
                 priceLineVisible: false,
-                lastValueVisible: false
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => null
             });
 
             ema25Series = chart.addLineSeries({
                 color: '#00FF00',
                 lineWidth: 1.5,
                 priceLineVisible: false,
-                lastValueVisible: false
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => null
             });
 
-            // Event listeners for positioning overlay labels dynamically
+            // Subscribe to visible range changes to recalculate overlay
             chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
-                updateSrOverlayLabels();
-            });
-            chart.subscribeCrosshairMove(() => {
-                updateSrOverlayLabels();
+                requestAnimationFrame(renderCanvasOverlay);
             });
 
             // Handle Resize
             const resizeObserver = new ResizeObserver(entries => {
                 if (entries.length === 0 || !entries[0].contentRect) return;
                 const { width, height } = entries[0].contentRect;
-                if (width > 0 && height > 0) {
-                    chart.resize(width, height);
-                    updateSrOverlayLabels();
-                }
+                chart.resize(width, height);
+                resizeCanvas();
             });
             resizeObserver.observe(chartDiv);
-
-            // Initial sizing
-            const rect = chartDiv.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                chart.resize(rect.width, rect.height);
-            }
+            resizeCanvas();
         }
 
         // Calculate EMA
         function calculateEMA(data, length) {
-            if (!data || data.length === 0) return [];
             const ema = [];
             const k = 2 / (length + 1);
             let prevEma = data[0].close;
-            const t0 = data[0].time !== undefined ? data[0].time : 0;
-            ema.push({ time: t0, value: prevEma });
+            ema.push({ time: data[0].time, value: prevEma });
 
             for (let i = 1; i < data.length; i++) {
                 const val = data[i].close * k + prevEma * (1 - k);
-                const t = data[i].time !== undefined ? data[i].time : i;
-                ema.push({ time: t, value: val });
+                ema.push({ time: data[i].time, value: val });
                 prevEma = val;
             }
             return ema;
         }
 
-        // Calculate Take Profit and Stop Loss levels for a specific timeframe's candle data
-        function calculateTfLevels(candles) {
-            if (!candles || candles.length < 25) return null;
-
-            const lastIdx = candles.length - 1;
-            const currentClose = candles[lastIdx].close;
-            const ema7 = calculateEMA(candles, 7);
-            const ema25 = calculateEMA(candles, 25);
-            const lastEma7 = ema7[lastIdx] ? ema7[lastIdx].value : currentClose;
-            const lastEma25 = ema25[lastIdx] ? ema25[lastIdx].value : currentClose;
-
-            // Detect Swing Highs and Swing Lows
-            const lookback = Math.min(60, candles.length - 2);
-            const startIdx = candles.length - lookback;
-            const swingHighs = [];
-            const swingLows = [];
-
-            for (let i = startIdx; i < candles.length - 2; i++) {
-                const high = candles[i].high;
-                const low = candles[i].low;
-
-                if (high > candles[i-1].high && high > candles[i-2].high && high > candles[i+1].high && high > candles[i+2].high) {
-                    swingHighs.push(high);
-                }
-                if (low < candles[i-1].low && low < candles[i-2].low && low < candles[i+1].low && low < candles[i+2].low) {
-                    swingLows.push(low);
-                }
-            }
-
-            let resistances = swingHighs.filter(h => h > currentClose).sort((a, b) => a - b);
-            let supports = swingLows.filter(l => l < currentClose).sort((a, b) => b - a);
-
-            const r1 = resistances[0] || currentClose * 1.004;
-            const s1 = supports[0] || currentClose * 0.996;
-
-            let isBullish = false;
-            let trendText = "Consolidación 🟡";
-            let trendClass = "neutral";
-
-            if (currentClose > lastEma7 && lastEma7 > lastEma25) {
-                trendText = "Alcista 🟢";
-                trendClass = "bullish";
-                isBullish = true;
-            } else if (currentClose < lastEma7 && lastEma7 < lastEma25) {
-                trendText = "Bajista 🔴";
-                trendClass = "bearish";
-                isBullish = false;
-            } else {
-                trendText = "Consolidación 🟡";
-                trendClass = "neutral";
-                isBullish = (currentClose - s1) < (r1 - currentClose);
-            }
-
-            return { trendText, trendClass, support: s1, resistance: r1 };
-        }
-
-        // Timeframe line width mapping (increases as timeframe increases)
-        const TF_LINE_WIDTHS = {
-            '1m': 1,
-            '5m': 1,
-            '15m': 2,
-            '30m': 2,
-            '1h': 2,
-            '4h': 3,
-            '1d': 3
+        // Margex Data Fetching & Stream Integration
+        const MARGEX_INTERVAL_MAP = {
+            '1m': '1M',
+            '5m': '5M',
+            '15m': '15M',
+            '30m': '30M',
+            '1h': '60M',
+            '4h': '4H',
+            '1d': '1D'
         };
 
-        const TF_TREND_COLORS = {
-            bullish: '#0ecb81', // Verde para Alcista 🟢
-            bearish: '#f6465d', // Rojo para Bajista 🔴
-            neutral: '#f0b90b'  // Amarillo para Consolidación 🟡
+        const BYBIT_INTERVAL_MAP = {
+            '1m': '1',
+            '5m': '5',
+            '15m': '15',
+            '30m': '30',
+            '1h': '60',
+            '4h': '240',
+            '1d': 'D'
         };
 
-        function getTfColor(tf) {
-            const levels = allTfLevels[tf];
-            const trendClass = levels ? levels.trendClass : 'neutral';
-            return TF_TREND_COLORS[trendClass] || '#f0b90b';
-        }
+        let pollingTimer = null;
+        let priceOffset = 0;
 
-        // Render Support and Resistance lines for ALL timeframes on chart
-        function renderAllTimeframePriceLines() {
-            if (!candleSeries) return;
+        function normalizeKlineData(raw) {
+            let items = Array.isArray(raw) ? raw : (raw.data || raw.result || raw.klines || []);
+            if (!Array.isArray(items)) return [];
 
-            // Remove existing lines
-            priceLines.forEach(l => {
-                try { candleSeries.removePriceLine(l); } catch(e) {}
-            });
-            priceLines = [];
-
-            if (!toggleSrLines || !toggleSrLines.checked) return;
-
-            const formatVal = (v) => Math.round(v).toLocaleString('en-US');
-
-            TIMEFRAMES.forEach(tf => {
-                const levels = allTfLevels[tf];
-                if (!levels || !levels.resistance || !levels.support) return;
-
-                const lineWidth = TF_LINE_WIDTHS[tf] || 1;
-                const lineColor = getTfColor(tf);
-
-                try {
-                    // Resistance Line
-                    priceLines.push(candleSeries.createPriceLine({
-                        price: levels.resistance,
-                        color: lineColor,
-                        lineWidth: lineWidth,
-                        lineStyle: LightweightCharts.LineStyle.Dotted,
-                        axisLabelVisible: false,
-                        title: ''
-                    }));
-
-                    // Support Line
-                    priceLines.push(candleSeries.createPriceLine({
-                        price: levels.support,
-                        color: lineColor,
-                        lineWidth: lineWidth,
-                        lineStyle: LightweightCharts.LineStyle.Dotted,
-                        axisLabelVisible: false,
-                        title: ''
-                    }));
-                } catch(e) {}
-            });
-
-            updateSrOverlayLabels();
-        }
-
-        // Render transparent overlay labels on left of chart with enlarged R and S
-        function updateSrOverlayLabels() {
-            const container = document.getElementById('sr_labels_overlay');
-            if (!container) return;
-
-            container.innerHTML = '';
-
-            if (!toggleSrLines || !toggleSrLines.checked || !candleSeries) return;
-
-            const formatVal = (v) => Math.round(v).toLocaleString('en-US');
-
-            TIMEFRAMES.forEach(tf => {
-                const levels = allTfLevels[tf];
-                if (!levels || !levels.resistance || !levels.support) return;
-
-                const isCurrent = (tf === currentInterval);
-                const labelColor = getTfColor(tf);
-
-                // Resistance Label (R)
-                const yRes = candleSeries.priceToCoordinate(levels.resistance);
-                if (yRes !== null && yRes >= 0 && yRes <= container.clientHeight) {
-                    const lblRes = document.createElement('div');
-                    lblRes.className = `sr-overlay-label ${isCurrent ? 'current' : ''}`;
-                    lblRes.style.top = `${yRes}px`;
-                    lblRes.style.color = labelColor;
-                    lblRes.innerText = `R ${tf}: ${formatVal(levels.resistance)}`;
-                    container.appendChild(lblRes);
-                }
-
-                // Support Label (S)
-                const ySop = candleSeries.priceToCoordinate(levels.support);
-                if (ySop !== null && ySop >= 0 && ySop <= container.clientHeight) {
-                    const lblSop = document.createElement('div');
-                    lblSop.className = `sr-overlay-label ${isCurrent ? 'current' : ''}`;
-                    lblSop.style.top = `${ySop}px`;
-                    lblSop.style.color = labelColor;
-                    lblSop.innerText = `S ${tf}: ${formatVal(levels.support)}`;
-                    container.appendChild(lblSop);
-                }
-            });
-        }
-
-        // Update Price Action Analysis for active chart & render lines
-        function updatePriceActionAnalysis() {
-            if (!chartData || chartData.length < 25) return;
-
-            const currentLevels = calculateTfLevels(chartData);
-            if (currentLevels) {
-                allTfLevels[currentInterval] = currentLevels;
-
-                // Update Chart badge for current timeframe
-                const badge = document.querySelector(`.tf-chart-badge[data-tf="${currentInterval}"]`);
-                if (badge) {
-                    badge.className = `tf-chart-badge ${currentLevels.trendClass} active`;
-                }
-            }
-
-            renderAllTimeframePriceLines();
-        }
-
-        // Fetch and update Trend analysis & TP/SL for ALL timeframes
-        async function updateMultiTimeframeAnalysis() {
-            try {
-                const fetchPromises = TIMEFRAMES.map(async tf => {
-                    const data = await fetchKlineData(tf, 60);
-                    return { tf, data };
-                });
-
-                const results = await Promise.all(fetchPromises);
-
-                results.forEach(({ tf, data }) => {
-                    if (!data || !Array.isArray(data) || data.length < 25) return;
-
-                    const candles = data.map(d => ({
+            const parsed = items.map(d => {
+                if (Array.isArray(d)) {
+                    const rawTime = d[0];
+                    const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    return {
+                        time: timeSec,
                         open: parseFloat(d[1]),
                         high: parseFloat(d[2]),
                         low: parseFloat(d[3]),
-                        close: parseFloat(d[4])
-                    }));
-
-                    const res = calculateTfLevels(candles);
-                    if (res) {
-                        allTfLevels[tf] = res;
-
-                        // Update UI row for this tf
-                        const row = document.querySelector(`.tf-row[data-tf="${tf}"]`);
-                        if (row) {
-                            const trendEl = row.querySelector('.tf-trend');
-                            if (trendEl) {
-                                trendEl.innerText = res.trendText;
-                                trendEl.className = `tf-trend ${res.trendClass}`;
-                            }
-                        }
-
-                        // Update Chart horizontal badge for this tf
-                        const badge = document.querySelector(`.tf-chart-badge[data-tf="${tf}"]`);
-                        if (badge) {
-                            badge.className = `tf-chart-badge ${res.trendClass}${tf === currentInterval ? ' active' : ''}`;
-                        }
-                    }
-                });
-
-                if (chartData && chartData.length >= 25) {
-                    const resCurrent = calculateTfLevels(chartData);
-                    if (resCurrent) {
-                        allTfLevels[currentInterval] = resCurrent;
-                    }
+                        close: parseFloat(d[4]),
+                        volume: parseFloat(d[5] || 0)
+                    };
+                } else if (typeof d === 'object' && d !== null) {
+                    const rawTime = d.time || d.timestamp || d.t || d.openTime;
+                    const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    return {
+                        time: timeSec,
+                        open: parseFloat(d.open || d.o),
+                        high: parseFloat(d.high || d.h),
+                        low: parseFloat(d.low || d.l),
+                        close: parseFloat(d.close || d.c),
+                        volume: parseFloat(d.volume || d.vol || d.v || 0)
+                    };
                 }
+                return null;
+            }).filter(d => d !== null && !isNaN(d.time) && !isNaN(d.close))
+              .sort((a, b) => a.time - b.time);
 
-                renderAllTimeframePriceLines();
-            } catch (err) {
-                console.error("Error updating multi-timeframe analysis:", err);
+            const unique = [];
+            let lastTime = null;
+            for (const candle of parsed) {
+                if (candle.time !== lastTime) {
+                    unique.push(candle);
+                    lastTime = candle.time;
+                }
             }
+            return unique;
         }
 
-        // Fetch Historical Data for active timeframe
-        async function fetchBinanceData() {
+        async function fetchMargexData() {
             try {
-                const klinesData = await fetchKlineData(currentInterval, 1000);
-                if (!klinesData || !Array.isArray(klinesData)) {
-                    throw new Error("No se pudieron obtener datos de klines.");
+                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
+                const margexUrl = `https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=1000`;
+                
+                let klinesData = [];
+                try {
+                    const klinesRes = await fetch(margexUrl);
+                    if (klinesRes.ok) {
+                        const text = await klinesRes.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            klinesData = normalizeKlineData(JSON.parse(text));
+                        }
+                    }
+                } catch (fetchErr) {
+                    console.warn("Margex direct fetch fallback: ", fetchErr);
                 }
 
-                // Process Candles
-                chartData = klinesData.map(d => ({
-                    time: Math.floor(d[0] / 1000),
-                    open: parseFloat(d[1]),
-                    high: parseFloat(d[2]),
-                    low: parseFloat(d[3]),
-                    close: parseFloat(d[4]),
-                    volume: parseFloat(d[5])
-                }));
+                if (klinesData.length === 0) {
+                    const fallbackUrls = [
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=1000`,
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`,
+                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`
+                    ];
 
-                // Calculate EMAs
+                    for (const fbUrl of fallbackUrls) {
+                        try {
+                            const fbRes = await fetch(fbUrl);
+                            if (fbRes.ok) {
+                                const text = await fbRes.text();
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    klinesData = normalizeKlineData(JSON.parse(text));
+                                    if (klinesData.length > 0) break;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+
+                if (klinesData.length === 0) {
+                    throw new Error("No data received from Margex data sources");
+                }
+
+                if (priceOffset !== 0) {
+                    klinesData = klinesData.map(c => ({
+                        ...c,
+                        open: c.open + priceOffset,
+                        high: c.high + priceOffset,
+                        low: c.low + priceOffset,
+                        close: c.close + priceOffset
+                    }));
+                }
+
+                chartData = klinesData;
                 ema7Data = calculateEMA(chartData, 7);
                 ema25Data = calculateEMA(chartData, 25);
 
-                // Load to series
                 candleSeries.setData(chartData);
-                volumeSeries.setData(chartData.map(d => ({
-                    time: d.time,
-                    value: d.volume,
-                    color: d.close >= d.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
-                })));
-                ema7Series.setData(ema7Data);
-                ema25Series.setData(ema25Data);
+                if (toggleEma7 && toggleEma7.checked) ema7Series.setData(ema7Data);
+                if (toggleEma25 && toggleEma25.checked) ema25Series.setData(ema25Data);
 
-                updatePriceActionAnalysis();
-                updateMultiTimeframeAnalysis();
+                await fetch5mKlinesIfNeeded();
+                await fetch15mKlinesIfNeeded();
+                updateRefOpenAndLines();
 
-                // Connect to Stream
-                connectWebsocket();
+
+
+                if (chartData.length > 0) {
+                    const latest = chartData[chartData.length - 1];
+                    const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                    const changePercent = ((latest.close - first24h.open) / first24h.open) * 100;
+                    
+                    let high24h = -Infinity;
+                    let low24h = Infinity;
+                    let vol24h = 0;
+                    const slice24h = chartData.slice(-1440);
+                    for (const c of slice24h) {
+                        if (c.high > high24h) high24h = c.high;
+                        if (c.low < low24h) low24h = c.low;
+                        vol24h += c.volume;
+                    }
+
+                    updateHeaderStats({
+                        c: latest.close,
+                        P: changePercent,
+                        h: high24h,
+                        l: low24h,
+                        q: vol24h * latest.close
+                    });
+                }
+
+                connectMargexStream();
 
             } catch (err) {
-                console.error("Error fetching Binance data: ", err);
-                if (connectionText && connectionDot) {
-                    connectionText.innerText = "Error cargando datos de Binance.";
+                console.error("Error fetching Margex data: ", err);
+                if (connectionText) connectionText.innerText = "Error cargando datos de Margex.";
+                if (connectionDot) {
                     connectionDot.style.backgroundColor = "var(--binance-red)";
                     connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
                 }
             }
         }
 
-        // Connect WebSocket combined streams
-        function connectWebsocket() {
+        function connectMargexStream() {
             if (ws) {
-                try {
-                    ws.onclose = null;
-                    ws.close();
-                } catch(e) {}
+                try { ws.onclose = null; ws.close(); } catch(e) {}
+                ws = null;
+            }
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
             }
 
-            ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=btcusdt@kline_${currentInterval}/btcusdt@ticker`);
-            
-            ws.onopen = () => {
-                if (connectionText && connectionDot) {
-                    connectionText.innerText = "Conexión en vivo activa";
-                    connectionDot.style.backgroundColor = "var(--binance-green)";
-                    connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
-                }
-            };
+            let wsAttempted = false;
+            try {
+                ws = new WebSocket(`wss://api.margex.com/v1/ws`);
 
-            ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
-                const stream = msg.stream;
-                const data = msg.data;
+                ws.onopen = () => {
+                    wsAttempted = true;
+                    if (connectionText) connectionText.innerText = "Margex Live WS Activo";
+                    if (connectionDot) {
+                        connectionDot.style.backgroundColor = "var(--binance-green)";
+                        connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+                    }
 
-                if (stream === `btcusdt@kline_${currentInterval}`) {
-                    const k = data.k;
-                    updateRealtimeKline(k);
-                } else if (stream === "btcusdt@ticker") {
-                    updateHeaderStats(data);
-                }
-            };
+                    const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                    ws.send(JSON.stringify({
+                        op: "subscribe",
+                        args: [`klines.${intervalParam}.BTCUSD`, `ticker.BTCUSD`]
+                    }));
+                };
 
-            ws.onerror = (e) => {
-                console.error("Websocket Error: ", e);
-            };
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.topic && msg.topic.includes('kline') && msg.data) {
+                            const kData = normalizeKlineData([msg.data])[0];
+                            if (kData) updateRealtimeKlineFromCandle(kData);
+                        } else if (msg.topic && msg.topic.includes('ticker') && msg.data) {
+                            updateHeaderStats(msg.data);
+                        }
+                    } catch(e) {}
+                };
 
-            ws.onclose = () => {
-                if (connectionText && connectionDot) {
-                    connectionText.innerText = "Desconectado. Reintentando...";
-                    connectionDot.style.backgroundColor = "var(--binance-red)";
-                    connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
-                }
-                setTimeout(connectWebsocket, 5000);
-            };
+                ws.onerror = () => { startPollingFallback(); };
+                ws.onclose = () => {
+                    if (!wsAttempted) {
+                        startPollingFallback();
+                    } else {
+                        if (connectionText) connectionText.innerText = "Reconectando a Margex...";
+                        if (connectionDot) {
+                            connectionDot.style.backgroundColor = "var(--binance-yellow)";
+                            connectionDot.style.boxShadow = "0 0 8px var(--binance-yellow)";
+                        }
+                        setTimeout(connectMargexStream, 5000);
+                    }
+                };
+            } catch (e) {
+                startPollingFallback();
+            }
         }
 
-        // Update real-time statistics in header
-        let lastPrice = 0;
-        function updateHeaderStats(tick) {
-            if (!tick) return;
-            const price = parseFloat(tick.c);
-            
-            if (livePriceEl) {
-                livePriceEl.innerText = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                if (lastPrice !== 0 && price !== lastPrice) {
-                    if (price > lastPrice) {
-                        livePriceEl.className = "stat-value price up";
-                        livePriceEl.style.textShadow = "0 0 10px rgba(14, 203, 129, 0.4)";
-                    } else {
-                        livePriceEl.className = "stat-value price down";
-                        livePriceEl.style.textShadow = "0 0 10px rgba(246, 70, 93, 0.4)";
+        function startPollingFallback() {
+            if (connectionText) connectionText.innerText = "Margex Live (HTTP Polling)";
+            if (connectionDot) {
+                connectionDot.style.backgroundColor = "var(--binance-green)";
+                connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+            }
+
+            if (!pollingTimer) {
+                pollingTimer = setInterval(async () => {
+                    await pollMargexLatest();
+                }, 3000);
+            }
+        }
+
+        async function pollMargexLatest() {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
+                let candles = [];
+                try {
+                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=5`);
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            candles = normalizeKlineData(JSON.parse(text));
+                        }
+                    }
+                } catch(e) {}
+
+                if (candles.length === 0) {
+                    const fallbackUrls = [
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=5`,
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`,
+                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`
+                    ];
+                    for (const fbUrl of fallbackUrls) {
+                        try {
+                            const fbRes = await fetch(fbUrl);
+                            if (fbRes.ok) {
+                                const text = await fbRes.text();
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    candles = normalizeKlineData(JSON.parse(text));
+                                    if (candles.length > 0) break;
+                                }
+                            }
+                        } catch(e) {}
                     }
                 }
-                setTimeout(() => { livePriceEl.style.textShadow = "none"; }, 200);
+
+                if (candles.length > 0) {
+                    let latest = candles[candles.length - 1];
+                    if (priceOffset !== 0) {
+                        latest = {
+                            ...latest,
+                            open: latest.open + priceOffset,
+                            high: latest.high + priceOffset,
+                            low: latest.low + priceOffset,
+                            close: latest.close + priceOffset
+                        };
+                    }
+                    updateRealtimeKlineFromCandle(latest);
+
+                    if (chartData.length > 0) {
+                        const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                        const changePercent = ((latest.close - first24h.open) / first24h.open) * 100;
+                        
+                        let high24h = latest.high;
+                        let low24h = latest.low;
+                        const slice24h = chartData.slice(-100);
+                        for (const c of slice24h) {
+                            if (c.high > high24h) high24h = c.high;
+                            if (c.low < low24h) low24h = c.low;
+                        }
+
+                        updateHeaderStats({
+                            c: latest.close,
+                            P: changePercent,
+                            h: high24h,
+                            l: low24h,
+                            q: (slice24h.reduce((acc, curr) => acc + curr.volume, 0)) * latest.close
+                        });
+                    }
+                }
+            } catch(e) {}
+        }
+
+        let lastPrice = 0;
+        let refCandleInterval = '15m'; // '15m' (defecto) o '5m'
+        let currentRefOpenPrice = null;
+        let lineUpper200 = null;
+        let lineLower200 = null;
+        let lineCenter = null;
+
+        // 5m Support & Resistance state
+        let sr5mEnabled = true;
+        let current5mSupport = null;
+        let current5mResistance = null;
+        let lineSupport5m = null;
+        let lineResistance5m = null;
+        let cached5mKlines = [];
+
+        // 15m Support & Resistance state
+        let sr15mEnabled = true;
+        let current15mSupport = null;
+        let current15mResistance = null;
+        let lineSupport15m = null;
+        let lineResistance15m = null;
+        let cached15mKlines = [];
+
+        function getAggregatedCandlesFromData(data, periodSec) {
+            if (!data || data.length === 0) return [];
+
+            const candles = [];
+            let currentBucket = null;
+
+            for (const c of data) {
+                const bucketTime = Math.floor(c.time / periodSec) * periodSec;
+                if (!currentBucket || currentBucket.time !== bucketTime) {
+                    if (currentBucket) candles.push(currentBucket);
+                    currentBucket = {
+                        time: bucketTime,
+                        open: c.open,
+                        high: c.high,
+                        low: c.low,
+                        close: c.close,
+                        volume: c.volume
+                    };
+                } else {
+                    currentBucket.high = Math.max(currentBucket.high, c.high);
+                    currentBucket.low = Math.min(currentBucket.low, c.low);
+                    currentBucket.close = c.close;
+                    currentBucket.volume += c.volume;
+                }
+            }
+            if (currentBucket) candles.push(currentBucket);
+            return candles;
+        }
+
+        function get5mCandlesFromData(data) {
+            if (!data || data.length === 0) return [];
+            if (currentInterval === '5m') return data;
+            return getAggregatedCandlesFromData(data, 300);
+        }
+
+        function findNearestSupportResistance(candles, currentPrice) {
+            if (!candles || candles.length < 5 || !currentPrice) return { support: null, resistance: null };
+
+            const pivotsHigh = [];
+            const pivotsLow = [];
+            const span = 2;
+
+            for (let i = span; i < candles.length - span; i++) {
+                let isHigh = true;
+                let isLow = true;
+
+                for (let j = 1; j <= span; j++) {
+                    if (candles[i].high <= candles[i - j].high || candles[i].high <= candles[i + j].high) {
+                        isHigh = false;
+                    }
+                    if (candles[i].low >= candles[i - j].low || candles[i].low >= candles[i + j].low) {
+                        isLow = false;
+                    }
+                }
+
+                if (isHigh) pivotsHigh.push(candles[i].high);
+                if (isLow) pivotsLow.push(candles[i].low);
+            }
+
+            const recentHighs = candles.slice(-20).map(c => c.high);
+            const recentLows = candles.slice(-20).map(c => c.low);
+
+            const validResistances = pivotsHigh.filter(p => p > currentPrice);
+            if (validResistances.length === 0) {
+                const maxRecent = Math.max(...recentHighs);
+                if (maxRecent > currentPrice) validResistances.push(maxRecent);
+            }
+
+            const validSupports = pivotsLow.filter(p => p < currentPrice);
+            if (validSupports.length === 0) {
+                const minRecent = Math.min(...recentLows);
+                if (minRecent < currentPrice) validSupports.push(minRecent);
+            }
+
+            let nearestResistance = null;
+            if (validResistances.length > 0) {
+                nearestResistance = Math.min(...validResistances);
+            }
+
+            let nearestSupport = null;
+            if (validSupports.length > 0) {
+                nearestSupport = Math.max(...validSupports);
+            }
+
+            return { support: nearestSupport, resistance: nearestResistance };
+        }
+
+        function findNearest5mSupportResistance(c5m, currentPrice) {
+            return findNearestSupportResistance(c5m, currentPrice);
+        }
+
+        async function fetch5mKlinesIfNeeded() {
+            if (currentInterval === '1m' || currentInterval === '5m') {
+                cached5mKlines = get5mCandlesFromData(chartData);
+                return;
+            }
+            try {
+                const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=5M&limit=100`);
+                if (res.ok) {
+                    const json = await res.json();
+                    cached5mKlines = normalizeKlineData(json);
+                }
+            } catch(e) {}
+
+            if (!cached5mKlines || cached5mKlines.length === 0) {
+                try {
+                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=5m&limit=100`);
+                    if (fbRes.ok) {
+                        const json = await fbRes.json();
+                        cached5mKlines = normalizeKlineData(json);
+                    }
+                } catch(e) {}
+            }
+        }
+
+        async function fetch15mKlinesIfNeeded() {
+            if (currentInterval === '1m' || currentInterval === '5m' || currentInterval === '15m') {
+                cached15mKlines = currentInterval === '15m' ? chartData : getAggregatedCandlesFromData(chartData, 900);
+                return;
+            }
+            try {
+                const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=15M&limit=100`);
+                if (res.ok) {
+                    const json = await res.json();
+                    cached15mKlines = normalizeKlineData(json);
+                }
+            } catch(e) {}
+
+            if (!cached15mKlines || cached15mKlines.length === 0) {
+                try {
+                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=100`);
+                    if (fbRes.ok) {
+                        const json = await fbRes.json();
+                        cached15mKlines = normalizeKlineData(json);
+                    }
+                } catch(e) {}
+            }
+        }
+
+        function update5mSupportResistance() {
+            if (!sr5mEnabled) {
+                if (lineSupport5m) { candleSeries.removePriceLine(lineSupport5m); lineSupport5m = null; }
+                if (lineResistance5m) { candleSeries.removePriceLine(lineResistance5m); lineResistance5m = null; }
+                current5mSupport = null;
+                current5mResistance = null;
+                renderCanvasOverlay();
+                return;
+            }
+
+            let c5m = [];
+            if (currentInterval === '1m' || currentInterval === '5m') {
+                c5m = get5mCandlesFromData(chartData);
+            } else {
+                c5m = cached5mKlines;
+            }
+
+            const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].close : lastPrice;
+            if (!c5m || c5m.length === 0 || !currentPrice) return;
+
+            const { support, resistance } = findNearest5mSupportResistance(c5m, currentPrice);
+            current5mSupport = support;
+            current5mResistance = resistance;
+
+            if (current5mSupport !== null) {
+                if (!lineSupport5m) {
+                    lineSupport5m = candleSeries.createPriceLine({
+                        price: current5mSupport,
+                        color: '#f0b90b',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: false,
+                        title: '',
+                    });
+                } else {
+                    lineSupport5m.applyOptions({ price: current5mSupport, color: '#f0b90b', axisLabelVisible: false, title: '' });
+                }
+            } else if (lineSupport5m) {
+                candleSeries.removePriceLine(lineSupport5m);
+                lineSupport5m = null;
+            }
+
+            if (current5mResistance !== null) {
+                if (!lineResistance5m) {
+                    lineResistance5m = candleSeries.createPriceLine({
+                        price: current5mResistance,
+                        color: '#f0b90b',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: false,
+                        title: '',
+                    });
+                } else {
+                    lineResistance5m.applyOptions({ price: current5mResistance, color: '#f0b90b', axisLabelVisible: false, title: '' });
+                }
+            } else if (lineResistance5m) {
+                candleSeries.removePriceLine(lineResistance5m);
+                lineResistance5m = null;
+            }
+
+            renderCanvasOverlay();
+        }
+
+        function update15mSupportResistance() {
+            if (!sr15mEnabled) {
+                if (lineSupport15m) { candleSeries.removePriceLine(lineSupport15m); lineSupport15m = null; }
+                if (lineResistance15m) { candleSeries.removePriceLine(lineResistance15m); lineResistance15m = null; }
+                current15mSupport = null;
+                current15mResistance = null;
+                renderCanvasOverlay();
+                return;
+            }
+
+            let c15m = [];
+            if (currentInterval === '1m' || currentInterval === '5m' || currentInterval === '15m') {
+                c15m = currentInterval === '15m' ? chartData : getAggregatedCandlesFromData(chartData, 900);
+            } else {
+                c15m = cached15mKlines;
+            }
+
+            const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].close : lastPrice;
+            if (!c15m || c15m.length === 0 || !currentPrice) return;
+
+            const { support, resistance } = findNearestSupportResistance(c15m, currentPrice);
+            current15mSupport = support;
+            current15mResistance = resistance;
+
+            if (current15mSupport !== null) {
+                if (!lineSupport15m) {
+                    lineSupport15m = candleSeries.createPriceLine({
+                        price: current15mSupport,
+                        color: '#ff9800',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: false,
+                        title: '',
+                    });
+                } else {
+                    lineSupport15m.applyOptions({ price: current15mSupport, color: '#ff9800', axisLabelVisible: false, title: '' });
+                }
+            } else if (lineSupport15m) {
+                candleSeries.removePriceLine(lineSupport15m);
+                lineSupport15m = null;
+            }
+
+            if (current15mResistance !== null) {
+                if (!lineResistance15m) {
+                    lineResistance15m = candleSeries.createPriceLine({
+                        price: current15mResistance,
+                        color: '#ff9800',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: false,
+                        title: '',
+                    });
+                } else {
+                    lineResistance15m.applyOptions({ price: current15mResistance, color: '#ff9800', axisLabelVisible: false, title: '' });
+                }
+            } else if (lineResistance15m) {
+                candleSeries.removePriceLine(lineResistance15m);
+                lineResistance15m = null;
+            }
+
+            renderCanvasOverlay();
+        }
+
+        function getRefOpenPrice(data, interval = refCandleInterval) {
+            if (!data || data.length === 0) return null;
+            const latest = data[data.length - 1];
+            let periodSec = 900;
+            if (interval === '5m') periodSec = 300;
+            else if (interval === '15m') periodSec = 900;
+            else if (interval === '30m') periodSec = 1800;
+            const startSec = Math.floor(latest.time / periodSec) * periodSec;
+
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (data[i].time === startSec) {
+                    return data[i].open;
+                }
+            }
+
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (data[i].time <= startSec) {
+                    return data[i].open;
+                }
+            }
+
+            return latest.open;
+        }
+
+        function updateRefOpenAndLines() {
+            if (!chartData || chartData.length === 0) return;
+            
+            const newRefOpen = getRefOpenPrice(chartData, refCandleInterval);
+            if (!newRefOpen || isNaN(newRefOpen)) return;
+            currentRefOpenPrice = newRefOpen;
+
+            const upperPrice = currentRefOpenPrice + 200;
+            const lowerPrice = currentRefOpenPrice - 200;
+            const centerPrice = currentRefOpenPrice;
+
+            if (!lineUpper200) {
+                lineUpper200 = candleSeries.createPriceLine({
+                    price: upperPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: false,
+                    title: '',
+                });
+            } else {
+                lineUpper200.applyOptions({ price: upperPrice, axisLabelVisible: false, title: '' });
+            }
+
+            if (!lineCenter) {
+                lineCenter = candleSeries.createPriceLine({
+                    price: centerPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: false,
+                    title: '',
+                });
+            } else {
+                lineCenter.applyOptions({ price: centerPrice, axisLabelVisible: false, title: '' });
+            }
+
+            if (!lineLower200) {
+                lineLower200 = candleSeries.createPriceLine({
+                    price: lowerPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: false,
+                    title: '',
+                });
+            } else {
+                lineLower200.applyOptions({ price: lowerPrice, axisLabelVisible: false, title: '' });
+            }
+
+            if (chart) {
+                chart.priceScale('right').applyOptions({});
+                update5mSupportResistance();
+                update15mSupportResistance();
+                renderCanvasOverlay();
+            }
+        }
+
+        function updateHeaderStats(tick) {
+            if (!livePriceEl) return;
+            const price = parseFloat(tick.c);
+            livePriceEl.innerText = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            if (lastPrice !== 0 && price !== lastPrice) {
+                if (price > lastPrice) {
+                    livePriceEl.className = "stat-value price up";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(14, 203, 129, 0.4)";
+                } else {
+                    livePriceEl.className = "stat-value price down";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(246, 70, 93, 0.4)";
+                }
             }
             lastPrice = price;
+
+            updateRefOpenAndLines();
+
+            setTimeout(() => {
+                if (livePriceEl) livePriceEl.style.textShadow = "none";
+            }, 200);
 
             if (priceChangeEl) {
                 const changePercent = parseFloat(tick.P);
@@ -1282,20 +1979,10 @@
             }
         }
 
-        // Handle kline websocket updates
-        function updateRealtimeKline(k) {
-            if (!k) return;
-            const time = Math.floor(k.t / 1000);
-            const candle = {
-                time: time,
-                open: parseFloat(k.o),
-                high: parseFloat(k.h),
-                low: parseFloat(k.l),
-                close: parseFloat(k.c),
-                volume: parseFloat(k.v)
-            };
-
+        function updateRealtimeKlineFromCandle(candle) {
+            const time = candle.time;
             const lastIdx = chartData.length - 1;
+
             if (lastIdx >= 0 && chartData[lastIdx].time === time) {
                 chartData[lastIdx] = candle;
 
@@ -1306,15 +1993,15 @@
                 const k25 = 2 / (25 + 1);
                 const prevEma25 = ema25Data[lastIdx - 1] ? ema25Data[lastIdx - 1].value : candle.close;
                 ema25Data[lastIdx] = { time: time, value: candle.close * k25 + prevEma25 * (1 - k25) };
-            } else {
+            } else if (lastIdx >= 0 && time > chartData[lastIdx].time) {
                 chartData.push(candle);
 
                 const k7 = 2 / (7 + 1);
-                const prevEma7 = ema7Data[lastIdx] ? ema7Data[lastIdx].value : candle.close;
+                const prevEma7 = ema7Data[lastIdx].value;
                 ema7Data.push({ time: time, value: candle.close * k7 + prevEma7 * (1 - k7) });
 
                 const k25 = 2 / (25 + 1);
-                const prevEma25 = ema25Data[lastIdx] ? ema25Data[lastIdx].value : candle.close;
+                const prevEma25 = ema25Data[lastIdx].value;
                 ema25Data.push({ time: time, value: candle.close * k25 + prevEma25 * (1 - k25) });
 
                 if (chartData.length > 1200) {
@@ -1325,25 +2012,18 @@
             }
 
             if (candleSeries) candleSeries.update(candle);
-            if (volumeSeries) {
-                volumeSeries.update({
-                    time: candle.time,
-                    value: candle.volume,
-                    color: candle.close >= candle.open ? 'rgba(14, 203, 129, 0.3)' : 'rgba(246, 70, 93, 0.3)'
-                });
-            }
 
-            if (toggleEma7 && toggleEma7.checked && ema7Series && ema7Data.length > 0) {
+            if (toggleEma7 && toggleEma7.checked && ema7Data.length > 0) {
                 ema7Series.update(ema7Data[ema7Data.length - 1]);
             }
-            if (toggleEma25 && toggleEma25.checked && ema25Series && ema25Data.length > 0) {
+            if (toggleEma25 && toggleEma25.checked && ema25Data.length > 0) {
                 ema25Series.update(ema25Data[ema25Data.length - 1]);
             }
 
-            updatePriceActionAnalysis();
+            updateRefOpenAndLines();
         }
 
-        // Toggle Switch Listeners
+        // Toggle Switch & Slider Listeners
         if (toggleEma7) {
             toggleEma7.addEventListener('change', () => {
                 if (toggleEma7.checked) {
@@ -1364,36 +2044,161 @@
             });
         }
 
-        if (toggleSrLines) {
-            toggleSrLines.addEventListener('change', () => {
-                updatePriceActionAnalysis();
+        const toggleSr5m = document.getElementById('toggle_sr_5m');
+        if (toggleSr5m) {
+            toggleSr5m.addEventListener('change', (e) => {
+                sr5mEnabled = e.target.checked;
+                update5mSupportResistance();
             });
         }
+
+        const toggleSr15m = document.getElementById('toggle_sr_15m');
+        if (toggleSr15m) {
+            toggleSr15m.addEventListener('change', (e) => {
+                sr15mEnabled = e.target.checked;
+                update15mSupportResistance();
+            });
+        }
+
+        if (toggleVpvr) {
+            toggleVpvr.addEventListener('change', (e) => {
+                vpvrEnabled = e.target.checked;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (sliderBins) {
+            sliderBins.addEventListener('input', (e) => {
+                vpvrBins = parseInt(e.target.value);
+                if (labelBins) labelBins.innerText = vpvrBins;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (sliderOpacity) {
+            sliderOpacity.addEventListener('input', (e) => {
+                vpvrOpacity = parseInt(e.target.value) / 100;
+                if (labelOpacity) labelOpacity.innerText = e.target.value + '%';
+                renderCanvasOverlay();
+            });
+        }
+
+        if (alignLeftBtn && alignRightBtn) {
+            alignLeftBtn.addEventListener('click', () => {
+                vpvrAlignment = 'left';
+                alignLeftBtn.classList.add('active');
+                alignRightBtn.classList.remove('active');
+                renderCanvasOverlay();
+            });
+            alignRightBtn.addEventListener('click', () => {
+                vpvrAlignment = 'right';
+                alignRightBtn.classList.add('active');
+                alignLeftBtn.classList.remove('active');
+                renderCanvasOverlay();
+            });
+        }
+
+        if (togglePocLine) {
+            togglePocLine.addEventListener('change', (e) => {
+                pocLineEnabled = e.target.checked;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (togglePeaks) {
+            togglePeaks.addEventListener('change', (e) => {
+                peaksEnabled = e.target.checked;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (sliderPeaks) {
+            sliderPeaks.addEventListener('input', (e) => {
+                peaksCount = parseInt(e.target.value);
+                if (labelPeaks) labelPeaks.innerText = peaksCount;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (sliderPriceOffset) {
+            sliderPriceOffset.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                const diff = val - priceOffset;
+                priceOffset = val;
+                if (labelPriceOffset) labelPriceOffset.innerText = (priceOffset > 0 ? "+" : "") + priceOffset + " $";
+
+                if (diff !== 0 && chartData.length > 0) {
+                    chartData = chartData.map(c => ({
+                        ...c,
+                        open: c.open + diff,
+                        high: c.high + diff,
+                        low: c.low + diff,
+                        close: c.close + diff
+                    }));
+                    ema7Data = calculateEMA(chartData, 7);
+                    ema25Data = calculateEMA(chartData, 25);
+
+                    candleSeries.setData(chartData);
+                    if (toggleEma7.checked) ema7Series.setData(ema7Data);
+                    if (toggleEma25.checked) ema25Series.setData(ema25Data);
+
+                    if (chartData.length > 0) {
+                        const latest = chartData[chartData.length - 1];
+                        const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                        updateHeaderStats({
+                            c: latest.close,
+                            P: ((latest.close - first24h.open) / first24h.open) * 100,
+                            h: Math.max(...chartData.slice(-100).map(c => c.high)),
+                            l: Math.min(...chartData.slice(-100).map(c => c.low)),
+                            q: chartData.slice(-100).reduce((acc, curr) => acc + curr.volume, 0) * latest.close
+                        });
+                    }
+                }
+            });
+        }
+
+        const refTf5mBtn = document.getElementById('ref_tf_5m');
+        const refTf15mBtn = document.getElementById('ref_tf_15m');
+        const refTf30mBtn = document.getElementById('ref_tf_30m');
+
+        const refBtns = [
+            { btn: refTf5mBtn, tf: '5m' },
+            { btn: refTf15mBtn, tf: '15m' },
+            { btn: refTf30mBtn, tf: '30m' }
+        ];
+
+        refBtns.forEach(item => {
+            if (item.btn) {
+                item.btn.addEventListener('click', () => {
+                    refBtns.forEach(i => i.btn && i.btn.classList.remove('active'));
+                    item.btn.classList.add('active');
+                    refCandleInterval = item.tf;
+                    updateRefOpenAndLines();
+                });
+            }
+        });
 
         // Change candle timeframe
         function changeInterval(newInterval) {
             if (currentInterval === newInterval) return;
-
             currentInterval = newInterval;
 
             document.querySelectorAll('.interval-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-interval') === newInterval);
-            });
-            document.querySelectorAll('.tf-row').forEach(row => {
-                row.classList.toggle('active', row.getAttribute('data-tf') === newInterval);
-            });
-            document.querySelectorAll('.tf-chart-badge').forEach(badge => {
-                badge.classList.toggle('active', badge.getAttribute('data-tf') === newInterval);
+                if (btn.getAttribute('data-interval') === newInterval) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
             });
 
             const intervalNames = {
-                '1m': '1 Minuto 1m',
-                '5m': '5 Minutos 5m',
-                '15m': '15 Minutos 15m',
-                '30m': '30 Minutos 30m',
-                '1h': '1 Hora 1h',
-                '4h': '4 Horas 4h',
-                '1d': '1 Día 1d'
+                '1m': '1 Minuto (1m)',
+                '5m': '5 Minutos (5m)',
+                '15m': '15 Minutos (15m)',
+                '30m': '30 Minutos (30m)',
+                '1h': '1 Hora (1h)',
+                '4h': '4 Horas (4h)',
+                '1d': '1 Día (1d)'
             };
             const subtitleEl = document.querySelector('.coin-subtitle');
             if (subtitleEl) subtitleEl.innerText = `Intervalo: ${intervalNames[newInterval]}`;
@@ -1402,19 +2207,21 @@
             ema7Data = [];
             ema25Data = [];
 
-            if (candleSeries) candleSeries.setData([]);
-            if (volumeSeries) volumeSeries.setData([]);
-            if (ema7Series) ema7Series.setData([]);
-            if (ema25Series) ema25Series.setData([]);
+            candleSeries.setData([]);
+            ema7Series.setData([]);
+            ema25Series.setData([]);
 
-            if (ws) {
-                try {
-                    ws.onclose = null;
-                    ws.close();
-                } catch(e) {}
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
             }
 
-            fetchBinanceData();
+            if (ws) {
+                try { ws.onclose = null; ws.close(); } catch(e) {}
+                ws = null;
+            }
+
+            fetchMargexData();
         }
 
         document.querySelectorAll('.interval-btn').forEach(btn => {
@@ -1424,33 +2231,89 @@
             });
         });
 
-        document.querySelectorAll('.tf-row').forEach(row => {
-            row.addEventListener('click', () => {
-                const newInterval = row.getAttribute('data-tf');
-                changeInterval(newInterval);
-            });
-        });
+        // Evaluate timeframe trend status
+        async function evaluateTimeframeTrend(interval) {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[interval] || interval;
+                let klines = [];
+                try {
+                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=50`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        klines = normalizeKlineData(json);
+                    }
+                } catch(e) {}
 
-        document.querySelectorAll('.tf-chart-badge').forEach(badge => {
-            badge.addEventListener('click', () => {
-                const newInterval = badge.getAttribute('data-tf');
-                changeInterval(newInterval);
-            });
-        });
+                if (klines.length === 0) {
+                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=50`);
+                    if (fbRes.ok) {
+                        const json = await fbRes.json();
+                        klines = normalizeKlineData(json);
+                    }
+                }
 
-        // Initialize App function with immediate state check
-        function startApp() {
+                if (!Array.isArray(klines) || klines.length < 25) return 'consolidation';
+
+                const closes = klines.map(k => k.close);
+                const highs = klines.map(k => k.high);
+                const lows = klines.map(k => k.low);
+
+                function getEMA(data, length) {
+                    const k = 2 / (length + 1);
+                    let ema = data[0];
+                    for (let i = 1; i < data.length; i++) {
+                        ema = data[i] * k + ema * (1 - k);
+                    }
+                    return ema;
+                }
+
+                const ema7 = getEMA(closes, 7);
+                const ema25 = getEMA(closes, 25);
+
+                let totalRange = 0;
+                const count = Math.min(14, klines.length);
+                for (let i = klines.length - count; i < klines.length; i++) {
+                    totalRange += (highs[i] - lows[i]);
+                }
+                const avgRange = totalRange / count;
+
+                const diff = ema7 - ema25;
+                const threshold = avgRange * 0.20;
+
+                if (Math.abs(diff) < threshold) {
+                    return 'consolidation';
+                } else if (diff > 0) {
+                    return 'bullish';
+                } else {
+                    return 'bearish';
+                }
+            } catch (e) {
+                return 'consolidation';
+            }
+        }
+
+        async function updateAllTimeframeTrends() {
+            const intervals = ['1m', '5m', '15m', '30m', '1h', '4h', '1d'];
+            const results = await Promise.all(intervals.map(tf => evaluateTimeframeTrend(tf)));
+            
+            intervals.forEach((tf, index) => {
+                const status = results[index];
+                const btn = document.querySelector(`.tf-trend-item[data-interval="${tf}"]`);
+                if (btn) {
+                    btn.classList.remove('bullish', 'bearish', 'consolidation');
+                    btn.classList.add(status);
+                }
+            });
+        }
+
+        // Initialize script
+        window.addEventListener('DOMContentLoaded', () => {
             initChart();
-            fetchBinanceData();
-            updateMultiTimeframeAnalysis();
-            setInterval(updateMultiTimeframeAnalysis, 20000);
-        }
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', startApp);
-        } else {
-            startApp();
-        }
+            initCanvas();
+            fetchMargexData();
+            updateAllTimeframeTrends();
+            setInterval(updateAllTimeframeTrends, 20000);
+        });
     </script>
 </body>
 </html>
