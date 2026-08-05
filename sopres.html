@@ -604,19 +604,7 @@
                 </div>
             </div>
 
-            <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Líneas de Referencia (±200)</h3>
-                <div class="slider-container">
-                    <div class="slider-header">
-                        <span>Vela de Referencia</span>
-                    </div>
-                    <div class="btn-group grid-3">
-                        <button class="btn-option" id="ref_tf_5m">5m</button>
-                        <button class="btn-option active" id="ref_tf_15m">15m</button>
-                        <button class="btn-option" id="ref_tf_30m">30m</button>
-                    </div>
-                </div>
-            </div>
+
 
             <div class="sidebar-section">
                 <h3 class="sidebar-section-title">Indicadores</h3>
@@ -639,6 +627,28 @@
                     </span>
                     <label class="switch">
                         <input type="checkbox" id="toggle_sr_15m" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #e040fb;"></span>
+                        Sop / Res 30m
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_sr_30m" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #00d2ff;"></span>
+                        Sop / Res 1h
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_sr_1h" checked>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -985,139 +995,120 @@
                 pocValueEl.innerText = "---.--";
             }
 
-            // 2. Render Open Reference Lines (+200, 0, -200)
-            if (currentRefOpenPrice) {
-                const upperPrice = currentRefOpenPrice + 200;
-                const lowerPrice = currentRefOpenPrice - 200;
-                const centerPrice = currentRefOpenPrice;
 
-                const yUpper = candleSeries.priceToCoordinate(upperPrice);
-                const yLower = candleSeries.priceToCoordinate(lowerPrice);
-                const yCenter = candleSeries.priceToCoordinate(centerPrice);
 
-                ctx.save();
-                ctx.strokeStyle = '#00d2ff';
-                ctx.setLineDash([4, 4]);
+        function drawSrLineOnly(ctx, y, chartPaneWidth, color) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(chartPaneWidth, y);
+            ctx.stroke();
+            ctx.restore();
+        }
 
-                // Línea +200
-                if (yUpper !== null && yUpper >= 0 && yUpper <= height) {
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(0, yUpper);
-                    ctx.lineTo(chartPaneWidth, yUpper);
-                    ctx.stroke();
+        function drawSrBadgeOnly(ctx, y, color, labelX, labelText, fontSize = 15) {
+            ctx.save();
+            ctx.font = `bold ${fontSize}px 'JetBrains Mono', monospace`;
+            const metrics = ctx.measureText(labelText);
+            const paddingX = 8;
+            const paddingY = 5;
+            const rectW = metrics.width + paddingX * 2;
+            const rectH = fontSize + paddingY * 2;
+            const rectX = labelX - paddingX;
+            const rectY = y - rectH / 2;
 
-                    ctx.font = "bold 12px 'JetBrains Mono', monospace";
-                    ctx.fillStyle = '#00d2ff';
-                    ctx.fillText(`+200 ($${upperPrice.toFixed(1)})`, 16, yUpper - 5);
-                }
+            // 1. Draw solid background matching chart (#0c0d12) - covers any line behind the badge!
+            ctx.fillStyle = '#0c0d12';
+            ctx.fillRect(rectX, rectY, rectW, rectH);
 
-                // Línea Central (0 / Apertura 5m, sin texto, 1px)
-                if (yCenter !== null && yCenter >= 0 && yCenter <= height) {
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(0, yCenter);
-                    ctx.lineTo(chartPaneWidth, yCenter);
-                    ctx.stroke();
-                }
+            // 2. 1px solid border matching line color
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([]);
+            ctx.strokeRect(rectX, rectY, rectW, rectH);
 
-                // Línea -200
-                if (yLower !== null && yLower >= 0 && yLower <= height) {
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(0, yLower);
-                    ctx.lineTo(chartPaneWidth, yLower);
-                    ctx.stroke();
+            // 3. Text fill inside
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+            ctx.fillText(labelText, labelX, y);
+            ctx.restore();
+        }
 
-                    ctx.font = "bold 12px 'JetBrains Mono', monospace";
-                    ctx.fillStyle = '#00d2ff';
-                    ctx.fillText(`-200 ($${lowerPrice.toFixed(1)})`, 16, yLower + 15);
-                }
+            // Render Support & Resistance Lines & Badges
+            const srItems = [];
 
-                ctx.restore();
-            }
-
-            // 3. Render 5m Support & Resistance Lines
             if (sr5mEnabled) {
                 if (current5mResistance !== null) {
-                    const yRes = candleSeries.priceToCoordinate(current5mResistance);
-                    if (yRes !== null && yRes >= 0 && yRes <= height) {
-                        ctx.save();
-                        ctx.strokeStyle = '#f0b90b';
-                        ctx.lineWidth = 1.5;
-                        ctx.setLineDash([5, 5]);
-                        ctx.beginPath();
-                        ctx.moveTo(0, yRes);
-                        ctx.lineTo(chartPaneWidth, yRes);
-                        ctx.stroke();
-
-                        ctx.font = "bold 12px 'JetBrains Mono', monospace";
-                        ctx.fillStyle = '#f0b90b';
-                        ctx.fillText(`Res 5m: $${Math.round(current5mResistance).toLocaleString('en-US')}`, 16, yRes - 5);
-                        ctx.restore();
+                    const y = candleSeries.priceToCoordinate(current5mResistance);
+                    if (y !== null && y >= 0 && y <= height) {
+                        srItems.push({ y, color: '#f0b90b', labelX: 16, labelText: `Res 5m: $${Math.round(current5mResistance).toLocaleString('en-US')}` });
                     }
                 }
-
                 if (current5mSupport !== null) {
-                    const ySup = candleSeries.priceToCoordinate(current5mSupport);
-                    if (ySup !== null && ySup >= 0 && ySup <= height) {
-                        ctx.save();
-                        ctx.strokeStyle = '#f0b90b';
-                        ctx.lineWidth = 1.5;
-                        ctx.setLineDash([5, 5]);
-                        ctx.beginPath();
-                        ctx.moveTo(0, ySup);
-                        ctx.lineTo(chartPaneWidth, ySup);
-                        ctx.stroke();
-
-                        ctx.font = "bold 12px 'JetBrains Mono', monospace";
-                        ctx.fillStyle = '#f0b90b';
-                        ctx.fillText(`Sop 5m: $${Math.round(current5mSupport).toLocaleString('en-US')}`, 16, ySup + 15);
-                        ctx.restore();
+                    const y = candleSeries.priceToCoordinate(current5mSupport);
+                    if (y !== null && y >= 0 && y <= height) {
+                        srItems.push({ y, color: '#f0b90b', labelX: 16, labelText: `Sop 5m: $${Math.round(current5mSupport).toLocaleString('en-US')}` });
                     }
                 }
             }
 
-            // 4. Render 15m Support & Resistance Lines
             if (sr15mEnabled) {
                 if (current15mResistance !== null) {
-                    const yRes = candleSeries.priceToCoordinate(current15mResistance);
-                    if (yRes !== null && yRes >= 0 && yRes <= height) {
-                        ctx.save();
-                        ctx.strokeStyle = '#ff9800';
-                        ctx.lineWidth = 1.5;
-                        ctx.setLineDash([5, 5]);
-                        ctx.beginPath();
-                        ctx.moveTo(0, yRes);
-                        ctx.lineTo(chartPaneWidth, yRes);
-                        ctx.stroke();
-
-                        ctx.font = "bold 12px 'JetBrains Mono', monospace";
-                        ctx.fillStyle = '#ff9800';
-                        ctx.fillText(`Res 15m: $${Math.round(current15mResistance).toLocaleString('en-US')}`, 180, yRes - 5);
-                        ctx.restore();
+                    const y = candleSeries.priceToCoordinate(current15mResistance);
+                    if (y !== null && y >= 0 && y <= height) {
+                        srItems.push({ y, color: '#ff9800', labelX: 210, labelText: `Res 15m: $${Math.round(current15mResistance).toLocaleString('en-US')}` });
                     }
                 }
-
                 if (current15mSupport !== null) {
-                    const ySup = candleSeries.priceToCoordinate(current15mSupport);
-                    if (ySup !== null && ySup >= 0 && ySup <= height) {
-                        ctx.save();
-                        ctx.strokeStyle = '#ff9800';
-                        ctx.lineWidth = 1.5;
-                        ctx.setLineDash([5, 5]);
-                        ctx.beginPath();
-                        ctx.moveTo(0, ySup);
-                        ctx.lineTo(chartPaneWidth, ySup);
-                        ctx.stroke();
-
-                        ctx.font = "bold 12px 'JetBrains Mono', monospace";
-                        ctx.fillStyle = '#ff9800';
-                        ctx.fillText(`Sop 15m: $${Math.round(current15mSupport).toLocaleString('en-US')}`, 180, ySup + 15);
-                        ctx.restore();
+                    const y = candleSeries.priceToCoordinate(current15mSupport);
+                    if (y !== null && y >= 0 && y <= height) {
+                        srItems.push({ y, color: '#ff9800', labelX: 210, labelText: `Sop 15m: $${Math.round(current15mSupport).toLocaleString('en-US')}` });
                     }
                 }
             }
+
+            if (sr30mEnabled) {
+                if (current30mResistance !== null) {
+                    const y = candleSeries.priceToCoordinate(current30mResistance);
+                    if (y !== null && y >= 0 && y <= height) {
+                        srItems.push({ y, color: '#e040fb', labelX: 410, labelText: `Res 30m: $${Math.round(current30mResistance).toLocaleString('en-US')}` });
+                    }
+                }
+                if (current30mSupport !== null) {
+                    const y = candleSeries.priceToCoordinate(current30mSupport);
+                    if (y !== null && y >= 0 && y <= height) {
+                        srItems.push({ y, color: '#e040fb', labelX: 410, labelText: `Sop 30m: $${Math.round(current30mSupport).toLocaleString('en-US')}` });
+                    }
+                }
+            }
+
+            if (sr1hEnabled) {
+                if (current1hResistance !== null) {
+                    const y = candleSeries.priceToCoordinate(current1hResistance);
+                    if (y !== null && y >= 0 && y <= height) {
+                        srItems.push({ y, color: '#00d2ff', labelX: 610, labelText: `Res 1h: $${Math.round(current1hResistance).toLocaleString('en-US')}` });
+                    }
+                }
+                if (current1hSupport !== null) {
+                    const y = candleSeries.priceToCoordinate(current1hSupport);
+                    if (y !== null && y >= 0 && y <= height) {
+                        srItems.push({ y, color: '#00d2ff', labelX: 610, labelText: `Sop 1h: $${Math.round(current1hSupport).toLocaleString('en-US')}` });
+                    }
+                }
+            }
+
+            // PASS 1: Render ALL horizontal lines first (running across the chart behind badges)
+            srItems.forEach(item => {
+                drawSrLineOnly(ctx, item.y, chartPaneWidth, item.color);
+            });
+
+            // PASS 2: Render ALL text badges ON TOP of lines (with solid #0c0d12 background covering lines behind them)
+            srItems.forEach(item => {
+                drawSrBadgeOnly(ctx, item.y, item.color, item.labelX, item.labelText, 15);
+            });
         }
 
         // Initialize Lightweight Chart
@@ -1137,8 +1128,8 @@
                 rightPriceScale: {
                     borderColor: 'rgba(255, 255, 255, 0.08)',
                     scaleMargins: {
-                        top: 0,
-                        bottom: 0
+                        top: 0.12,
+                        bottom: 0.12
                     },
                     alignLabels: false,
                     entireTextOnly: false
@@ -1147,7 +1138,7 @@
                     borderColor: 'rgba(255, 255, 255, 0.08)',
                     timeVisible: true,
                     secondsVisible: false,
-                    barSpacing: 6,
+                    barSpacing: 14,
                     tickMarkFormatter: (time, tickMarkType, locale) => {
                         const date = new Date(time * 1000);
                         const options = { timeZone: 'America/Argentina/Buenos_Aires' };
@@ -1185,22 +1176,7 @@
                 downColor: '#f6465d',
                 borderVisible: false,
                 wickUpColor: '#0ecb81',
-                wickDownColor: '#f6465d',
-                autoscaleInfoProvider: () => {
-                    if (currentRefOpenPrice && currentRefOpenPrice > 0) {
-                        return {
-                            priceRange: {
-                                minValue: currentRefOpenPrice - 300,
-                                maxValue: currentRefOpenPrice + 300,
-                            },
-                            margins: {
-                                above: 0,
-                                below: 0,
-                            },
-                        };
-                    }
-                    return null;
-                }
+                wickDownColor: '#f6465d'
             });
 
 
@@ -1382,9 +1358,18 @@
                 if (toggleEma7 && toggleEma7.checked) ema7Series.setData(ema7Data);
                 if (toggleEma25 && toggleEma25.checked) ema25Series.setData(ema25Data);
 
-                await fetch5mKlinesIfNeeded();
-                await fetch15mKlinesIfNeeded();
-                updateRefOpenAndLines();
+                await fetchAllSrKlines();
+                update5mSupportResistance();
+                update15mSupportResistance();
+                update30mSupportResistance();
+                update1hSupportResistance();
+
+                if (chartData.length > 0 && chart) {
+                    chart.timeScale().setVisibleLogicalRange({
+                        from: chartData.length - 45,
+                        to: chartData.length + 3
+                    });
+                }
 
 
 
@@ -1592,6 +1577,22 @@
         let lineResistance15m = null;
         let cached15mKlines = [];
 
+        // 30m Support & Resistance state
+        let sr30mEnabled = true;
+        let current30mSupport = null;
+        let current30mResistance = null;
+        let lineSupport30m = null;
+        let lineResistance30m = null;
+        let cached30mKlines = [];
+
+        // 1h Support & Resistance state
+        let sr1hEnabled = true;
+        let current1hSupport = null;
+        let current1hResistance = null;
+        let lineSupport1h = null;
+        let lineResistance1h = null;
+        let cached1hKlines = [];
+
         function getAggregatedCandlesFromData(data, periodSec) {
             if (!data || data.length === 0) return [];
 
@@ -1683,51 +1684,76 @@
             return findNearestSupportResistance(c5m, currentPrice);
         }
 
-        async function fetch5mKlinesIfNeeded() {
-            if (currentInterval === '1m' || currentInterval === '5m') {
-                cached5mKlines = get5mCandlesFromData(chartData);
-                return;
-            }
+        async function fetchNativeKlines(interval) {
+            const MARGEX_MAP = { '5m': '5M', '15m': '15M', '30m': '30M', '1h': '60M' };
+            const BYBIT_MAP = { '5m': '5', '15m': '15', '30m': '30', '1h': '60' };
+            
+            const margexParam = MARGEX_MAP[interval] || interval;
+            const bybitParam = BYBIT_MAP[interval] || '5';
+            
+            let klines = [];
             try {
-                const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=5M&limit=100`);
+                const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${margexParam}&limit=200`);
                 if (res.ok) {
-                    const json = await res.json();
-                    cached5mKlines = normalizeKlineData(json);
+                    const text = await res.text();
+                    if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                        klines = normalizeKlineData(JSON.parse(text));
+                    }
                 }
             } catch(e) {}
 
-            if (!cached5mKlines || cached5mKlines.length === 0) {
-                try {
-                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=5m&limit=100`);
-                    if (fbRes.ok) {
-                        const json = await fbRes.json();
-                        cached5mKlines = normalizeKlineData(json);
-                    }
-                } catch(e) {}
+            if (!klines || klines.length === 0) {
+                const fallbackUrls = [
+                    `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitParam}&limit=200`,
+                    `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=200`
+                ];
+                for (const url of fallbackUrls) {
+                    try {
+                        const fbRes = await fetch(url);
+                        if (fbRes.ok) {
+                            const text = await fbRes.text();
+                            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                klines = normalizeKlineData(JSON.parse(text));
+                                if (klines.length > 0) break;
+                            }
+                        }
+                    } catch(e) {}
+                }
             }
+            return klines;
         }
 
-        async function fetch15mKlinesIfNeeded() {
-            if (currentInterval === '1m' || currentInterval === '5m' || currentInterval === '15m') {
-                cached15mKlines = currentInterval === '15m' ? chartData : getAggregatedCandlesFromData(chartData, 900);
-                return;
-            }
-            try {
-                const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=15M&limit=100`);
-                if (res.ok) {
-                    const json = await res.json();
-                    cached15mKlines = normalizeKlineData(json);
-                }
-            } catch(e) {}
+        async function fetchAllSrKlines() {
+            const [k5m, k15m, k30m, k1h] = await Promise.all([
+                fetchNativeKlines('5m'),
+                fetchNativeKlines('15m'),
+                fetchNativeKlines('30m'),
+                fetchNativeKlines('1h')
+            ]);
+            if (k5m.length > 0) cached5mKlines = k5m;
+            if (k15m.length > 0) cached15mKlines = k15m;
+            if (k30m.length > 0) cached30mKlines = k30m;
+            if (k1h.length > 0) cached1hKlines = k1h;
+        }
 
-            if (!cached15mKlines || cached15mKlines.length === 0) {
-                try {
-                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=100`);
-                    if (fbRes.ok) {
-                        const json = await fbRes.json();
-                        cached15mKlines = normalizeKlineData(json);
-                    }
-                } catch(e) {}
+        function updateNativeKlineWithTick(cachedKlines, tick, periodSec) {
+            if (!cachedKlines || cachedKlines.length === 0) return;
+            const bucketTime = Math.floor(tick.time / periodSec) * periodSec;
+            const lastIdx = cachedKlines.length - 1;
+            if (cachedKlines[lastIdx].time === bucketTime) {
+                cachedKlines[lastIdx].high = Math.max(cachedKlines[lastIdx].high, tick.high);
+                cachedKlines[lastIdx].low = Math.min(cachedKlines[lastIdx].low, tick.low);
+                cachedKlines[lastIdx].close = tick.close;
+            } else if (bucketTime > cachedKlines[lastIdx].time) {
+                cachedKlines.push({
+                    time: bucketTime,
+                    open: tick.open,
+                    high: tick.high,
+                    low: tick.low,
+                    close: tick.close,
+                    volume: tick.volume || 0
+                });
+                if (cachedKlines.length > 200) cachedKlines.shift();
             }
         }
 
@@ -1741,13 +1767,7 @@
                 return;
             }
 
-            let c5m = [];
-            if (currentInterval === '1m' || currentInterval === '5m') {
-                c5m = get5mCandlesFromData(chartData);
-            } else {
-                c5m = cached5mKlines;
-            }
-
+            const c5m = cached5mKlines;
             const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].close : lastPrice;
             if (!c5m || c5m.length === 0 || !currentPrice) return;
 
@@ -1804,13 +1824,7 @@
                 return;
             }
 
-            let c15m = [];
-            if (currentInterval === '1m' || currentInterval === '5m' || currentInterval === '15m') {
-                c15m = currentInterval === '15m' ? chartData : getAggregatedCandlesFromData(chartData, 900);
-            } else {
-                c15m = cached15mKlines;
-            }
-
+            const c15m = cached15mKlines;
             const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].close : lastPrice;
             if (!c15m || c15m.length === 0 || !currentPrice) return;
 
@@ -1857,87 +1871,121 @@
             renderCanvasOverlay();
         }
 
-        function getRefOpenPrice(data, interval = refCandleInterval) {
-            if (!data || data.length === 0) return null;
-            const latest = data[data.length - 1];
-            let periodSec = 900;
-            if (interval === '5m') periodSec = 300;
-            else if (interval === '15m') periodSec = 900;
-            else if (interval === '30m') periodSec = 1800;
-            const startSec = Math.floor(latest.time / periodSec) * periodSec;
-
-            for (let i = data.length - 1; i >= 0; i--) {
-                if (data[i].time === startSec) {
-                    return data[i].open;
-                }
-            }
-
-            for (let i = data.length - 1; i >= 0; i--) {
-                if (data[i].time <= startSec) {
-                    return data[i].open;
-                }
-            }
-
-            return latest.open;
-        }
-
-        function updateRefOpenAndLines() {
-            if (!chartData || chartData.length === 0) return;
-            
-            const newRefOpen = getRefOpenPrice(chartData, refCandleInterval);
-            if (!newRefOpen || isNaN(newRefOpen)) return;
-            currentRefOpenPrice = newRefOpen;
-
-            const upperPrice = currentRefOpenPrice + 200;
-            const lowerPrice = currentRefOpenPrice - 200;
-            const centerPrice = currentRefOpenPrice;
-
-            if (!lineUpper200) {
-                lineUpper200 = candleSeries.createPriceLine({
-                    price: upperPrice,
-                    color: '#00d2ff',
-                    lineWidth: 1.5,
-                    lineStyle: LightweightCharts.LineStyle.Dotted,
-                    axisLabelVisible: false,
-                    title: '',
-                });
-            } else {
-                lineUpper200.applyOptions({ price: upperPrice, axisLabelVisible: false, title: '' });
-            }
-
-            if (!lineCenter) {
-                lineCenter = candleSeries.createPriceLine({
-                    price: centerPrice,
-                    color: '#00d2ff',
-                    lineWidth: 1,
-                    lineStyle: LightweightCharts.LineStyle.Dotted,
-                    axisLabelVisible: false,
-                    title: '',
-                });
-            } else {
-                lineCenter.applyOptions({ price: centerPrice, axisLabelVisible: false, title: '' });
-            }
-
-            if (!lineLower200) {
-                lineLower200 = candleSeries.createPriceLine({
-                    price: lowerPrice,
-                    color: '#00d2ff',
-                    lineWidth: 1.5,
-                    lineStyle: LightweightCharts.LineStyle.Dotted,
-                    axisLabelVisible: false,
-                    title: '',
-                });
-            } else {
-                lineLower200.applyOptions({ price: lowerPrice, axisLabelVisible: false, title: '' });
-            }
-
-            if (chart) {
-                chart.priceScale('right').applyOptions({});
-                update5mSupportResistance();
-                update15mSupportResistance();
+        function update30mSupportResistance() {
+            if (!sr30mEnabled) {
+                if (lineSupport30m) { candleSeries.removePriceLine(lineSupport30m); lineSupport30m = null; }
+                if (lineResistance30m) { candleSeries.removePriceLine(lineResistance30m); lineResistance30m = null; }
+                current30mSupport = null;
+                current30mResistance = null;
                 renderCanvasOverlay();
+                return;
             }
+
+            const c30m = cached30mKlines;
+            const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].close : lastPrice;
+            if (!c30m || c30m.length === 0 || !currentPrice) return;
+
+            const { support, resistance } = findNearestSupportResistance(c30m, currentPrice);
+            current30mSupport = support;
+            current30mResistance = resistance;
+
+            if (current30mSupport !== null) {
+                if (!lineSupport30m) {
+                    lineSupport30m = candleSeries.createPriceLine({
+                        price: current30mSupport,
+                        color: '#e040fb',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: false,
+                        title: '',
+                    });
+                } else {
+                    lineSupport30m.applyOptions({ price: current30mSupport, color: '#e040fb', axisLabelVisible: false, title: '' });
+                }
+            } else if (lineSupport30m) {
+                candleSeries.removePriceLine(lineSupport30m);
+                lineSupport30m = null;
+            }
+
+            if (current30mResistance !== null) {
+                if (!lineResistance30m) {
+                    lineResistance30m = candleSeries.createPriceLine({
+                        price: current30mResistance,
+                        color: '#e040fb',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: false,
+                        title: '',
+                    });
+                } else {
+                    lineResistance30m.applyOptions({ price: current30mResistance, color: '#e040fb', axisLabelVisible: false, title: '' });
+                }
+            } else if (lineResistance30m) {
+                candleSeries.removePriceLine(lineResistance30m);
+                lineResistance30m = null;
+            }
+
+            renderCanvasOverlay();
         }
+
+        function update1hSupportResistance() {
+            if (!sr1hEnabled) {
+                if (lineSupport1h) { candleSeries.removePriceLine(lineSupport1h); lineSupport1h = null; }
+                if (lineResistance1h) { candleSeries.removePriceLine(lineResistance1h); lineResistance1h = null; }
+                current1hSupport = null;
+                current1hResistance = null;
+                renderCanvasOverlay();
+                return;
+            }
+
+            const c1h = cached1hKlines;
+            const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].close : lastPrice;
+            if (!c1h || c1h.length === 0 || !currentPrice) return;
+
+            const { support, resistance } = findNearestSupportResistance(c1h, currentPrice);
+            current1hSupport = support;
+            current1hResistance = resistance;
+
+            if (current1hSupport !== null) {
+                if (!lineSupport1h) {
+                    lineSupport1h = candleSeries.createPriceLine({
+                        price: current1hSupport,
+                        color: '#00d2ff',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: false,
+                        title: '',
+                    });
+                } else {
+                    lineSupport1h.applyOptions({ price: current1hSupport, color: '#00d2ff', axisLabelVisible: false, title: '' });
+                }
+            } else if (lineSupport1h) {
+                candleSeries.removePriceLine(lineSupport1h);
+                lineSupport1h = null;
+            }
+
+            if (current1hResistance !== null) {
+                if (!lineResistance1h) {
+                    lineResistance1h = candleSeries.createPriceLine({
+                        price: current1hResistance,
+                        color: '#00d2ff',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: false,
+                        title: '',
+                    });
+                } else {
+                    lineResistance1h.applyOptions({ price: current1hResistance, color: '#00d2ff', axisLabelVisible: false, title: '' });
+                }
+            } else if (lineResistance1h) {
+                candleSeries.removePriceLine(lineResistance1h);
+                lineResistance1h = null;
+            }
+
+            renderCanvasOverlay();
+        }
+
+
 
         function updateHeaderStats(tick) {
             if (!livePriceEl) return;
@@ -1955,7 +2003,10 @@
             }
             lastPrice = price;
 
-            updateRefOpenAndLines();
+            update5mSupportResistance();
+            update15mSupportResistance();
+            update30mSupportResistance();
+            update1hSupportResistance();
 
             setTimeout(() => {
                 if (livePriceEl) livePriceEl.style.textShadow = "none";
@@ -2020,7 +2071,15 @@
                 ema25Series.update(ema25Data[ema25Data.length - 1]);
             }
 
-            updateRefOpenAndLines();
+            updateNativeKlineWithTick(cached5mKlines, candle, 300);
+            updateNativeKlineWithTick(cached15mKlines, candle, 900);
+            updateNativeKlineWithTick(cached30mKlines, candle, 1800);
+            updateNativeKlineWithTick(cached1hKlines, candle, 3600);
+
+            update5mSupportResistance();
+            update15mSupportResistance();
+            update30mSupportResistance();
+            update1hSupportResistance();
         }
 
         // Toggle Switch & Slider Listeners
@@ -2057,6 +2116,22 @@
             toggleSr15m.addEventListener('change', (e) => {
                 sr15mEnabled = e.target.checked;
                 update15mSupportResistance();
+            });
+        }
+
+        const toggleSr30m = document.getElementById('toggle_sr_30m');
+        if (toggleSr30m) {
+            toggleSr30m.addEventListener('change', (e) => {
+                sr30mEnabled = e.target.checked;
+                update30mSupportResistance();
+            });
+        }
+
+        const toggleSr1h = document.getElementById('toggle_sr_1h');
+        if (toggleSr1h) {
+            toggleSr1h.addEventListener('change', (e) => {
+                sr1hEnabled = e.target.checked;
+                update1hSupportResistance();
             });
         }
 
@@ -2157,26 +2232,7 @@
             });
         }
 
-        const refTf5mBtn = document.getElementById('ref_tf_5m');
-        const refTf15mBtn = document.getElementById('ref_tf_15m');
-        const refTf30mBtn = document.getElementById('ref_tf_30m');
 
-        const refBtns = [
-            { btn: refTf5mBtn, tf: '5m' },
-            { btn: refTf15mBtn, tf: '15m' },
-            { btn: refTf30mBtn, tf: '30m' }
-        ];
-
-        refBtns.forEach(item => {
-            if (item.btn) {
-                item.btn.addEventListener('click', () => {
-                    refBtns.forEach(i => i.btn && i.btn.classList.remove('active'));
-                    item.btn.classList.add('active');
-                    refCandleInterval = item.tf;
-                    updateRefOpenAndLines();
-                });
-            }
-        });
 
         // Change candle timeframe
         function changeInterval(newInterval) {
