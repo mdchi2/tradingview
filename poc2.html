@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC/USD Margex Trading Dashboard with VPVR</title>
+    <!-- Google Fonts for premium trading look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #080a0f;
+            --panel-bg: rgba(17, 22, 37, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f4f8;
+            --text-secondary: #90a4ae;
+            --binance-green: #0ecb81;
+            --binance-red: #f6465d;
+            --binance-yellow: #f0b90b;
+            --glow-green: rgba(14, 203, 129, 0.15);
+            --glow-red: rgba(246, 70, 93, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Live Header Stats */
+        .dashboard-header {
+            background-color: rgba(11, 14, 22, 0.95);
+            border-bottom: 1px solid var(--panel-border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .coin-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--binance-yellow), #e28a00);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #000;
+            font-size: 16px;
+            box-shadow: 0 0 12px rgba(240, 185, 11, 0.4);
+        }
+
+        .coin-name {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .coin-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .coin-title span {
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .coin-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .stats-grid {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-value.price {
+            font-size: 22px;
+            transition: color 0.15s ease, text-shadow 0.15s ease;
+        }
+
+        .stat-value.up {
+            color: var(--binance-green);
+        }
+
+        .stat-value.down {
+            color: var(--binance-red);
+        }
+
+        /* Main Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Chart Wrapper */
+        .chart-wrapper {
+            flex: 1;
+            position: relative;
+            background-color: #0c0d12;
+        }
+
+        #tradingview_chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        #vpvr_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Sidebar Control Panel */
+        .control-sidebar {
+            width: 280px;
+            background-color: rgba(11, 14, 23, 0.95);
+            border-left: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 24px;
+            overflow-y: auto;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        /* Switches & Controls styling */
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .control-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Custom Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .2s;
+            border-radius: 20px;
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-toggle {
+            background-color: var(--binance-yellow);
+        }
+
+        input:checked + .slider-toggle:before {
+            transform: translateX(18px);
+            background-color: #000;
+        }
+
+        /* Custom Slider Styling */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 450ms ease-in;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--binance-yellow);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-group.grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .btn-option {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-option.active {
+            background: var(--binance-yellow);
+            color: #000;
+        }
+
+        /* Status Indicator Banner */
+        .conn-status {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 16px;
+        }
+
+        .status-pulse {
+            width: 6px;
+            height: 6px;
+            background-color: var(--binance-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--binance-green);
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Tooltip style */
+        .tooltip {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            padding: 10px;
+            border-left: 3px solid var(--binance-yellow);
+        }
+
+        /* Top-Left Timeframe Trend Bar */
+        .tf-trend-bar {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(11, 14, 23, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .tf-trend-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .tf-trend-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tf-trend-item.active {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+        }
+
+        .tf-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--text-secondary);
+            display: inline-block;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Trend Status Styles */
+        .tf-trend-item.bullish {
+            color: var(--binance-green);
+            background: rgba(14, 203, 129, 0.12);
+            border-color: rgba(14, 203, 129, 0.3);
+        }
+        .tf-trend-item.bullish .tf-dot {
+            background-color: var(--binance-green);
+            box-shadow: 0 0 6px var(--binance-green);
+        }
+
+        .tf-trend-item.bearish {
+            color: var(--binance-red);
+            background: rgba(246, 70, 93, 0.12);
+            border-color: rgba(246, 70, 93, 0.3);
+        }
+        .tf-trend-item.bearish .tf-dot {
+            background-color: var(--binance-red);
+            box-shadow: 0 0 6px var(--binance-red);
+        }
+
+        .tf-trend-item.consolidation {
+            color: var(--binance-yellow);
+            background: rgba(240, 185, 11, 0.12);
+            border-color: rgba(240, 185, 11, 0.3);
+        }
+        .tf-trend-item.consolidation .tf-dot {
+            background-color: var(--binance-yellow);
+            box-shadow: 0 0 6px var(--binance-yellow);
+        }
+
+        /* Toast Alert Container */
+        .alert-toast-container {
+            position: absolute;
+            top: 55px;
+            right: 20px;
+            z-index: 120;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+            max-width: 320px;
+        }
+
+        .alert-toast {
+            background: rgba(15, 20, 32, 0.95);
+            border: 1px solid var(--panel-border);
+            border-left: 4px solid var(--binance-yellow);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            font-size: 13px;
+            animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .alert-toast.long {
+            border-left-color: var(--binance-green);
+            background: linear-gradient(135deg, rgba(14, 203, 129, 0.15), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.short {
+            border-left-color: var(--binance-red);
+            background: linear-gradient(135deg, rgba(246, 70, 93, 0.15), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.tp {
+            border-left-color: #00d2ff;
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.18), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.sl {
+            border-left-color: var(--binance-red);
+            background: linear-gradient(135deg, rgba(246, 70, 93, 0.2), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .alert-toast-body {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .alert-toast-close {
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <!-- Live Header Stats -->
+    <header class="dashboard-header">
+        <div class="logo-section">
+            <div class="coin-icon">₿</div>
+            <div class="coin-name">
+                <div class="coin-title">BTCUSD <span>Margex Live</span></div>
+                <div class="coin-subtitle">Intervalo: 1 Minuto (1m)</div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Precio</span>
+                <span class="stat-value price" id="live_price">---.--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Cambio 24h</span>
+                <span class="stat-value" id="price_change">--.--%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Máx / Mín 24h</span>
+                <span class="stat-value" id="price_range">--- / ---</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Volumen 24h (USDT)</span>
+                <span class="stat-value" id="volume_24h">---.-- M</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label" style="color: #00d2ff;">POC Activo</span>
+                <span class="stat-value" id="poc_value" style="color: #00d2ff;">---.--</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        <!-- Chart Area -->
+        <div class="chart-wrapper">
+            <!-- Top-Left Multi-Timeframe Trend Bar -->
+            <div class="tf-trend-bar" id="tf_trend_bar">
+                <button class="tf-trend-item interval-btn active" data-interval="1m"><span class="tf-dot"></span>1m</button>
+                <button class="tf-trend-item interval-btn" data-interval="5m"><span class="tf-dot"></span>5m</button>
+                <button class="tf-trend-item interval-btn" data-interval="15m"><span class="tf-dot"></span>15m</button>
+                <button class="tf-trend-item interval-btn" data-interval="30m"><span class="tf-dot"></span>30m</button>
+                <button class="tf-trend-item interval-btn" data-interval="1h"><span class="tf-dot"></span>1h</button>
+                <button class="tf-trend-item interval-btn" data-interval="4h"><span class="tf-dot"></span>4h</button>
+                <button class="tf-trend-item interval-btn" data-interval="1d"><span class="tf-dot"></span>1d</button>
+            </div>
+            <!-- TradingView Chart Container -->
+            <div id="tradingview_chart"></div>
+            <canvas id="vpvr_canvas"></canvas>
+        </div>
+
+        <!-- Sidebar Panel -->
+        <aside class="control-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Temporalidad</h3>
+                <div class="btn-group grid-3">
+                    <button class="btn-option interval-btn active" data-interval="1m">1m</button>
+                    <button class="btn-option interval-btn" data-interval="5m">5m</button>
+                    <button class="btn-option interval-btn" data-interval="15m">15m</button>
+                    <button class="btn-option interval-btn" data-interval="30m">30m</button>
+                    <button class="btn-option interval-btn" data-interval="1h">1h</button>
+                    <button class="btn-option interval-btn" data-interval="4h">4h</button>
+                    <button class="btn-option interval-btn" data-interval="1d">1d</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Líneas de Referencia (±200)</h3>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Vela de Referencia</span>
+                    </div>
+                    <div class="btn-group grid-3">
+                        <button class="btn-option" id="ref_tf_5m">5m</button>
+                        <button class="btn-option active" id="ref_tf_15m">15m</button>
+                        <button class="btn-option" id="ref_tf_30m">30m</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Indicadores</h3>
+                
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #FF0000;"></span>
+                        EMA 7 (Rojo)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ema7" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #00FF00;"></span>
+                        EMA 25 (Verde)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ema25" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Perfil de Volumen (VPVR)</h3>
+                
+                <div class="control-row">
+                    <span class="control-label">Activar VPVR</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_vpvr" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #ffffff; box-shadow: 0 0 6px #ffffff;"></span>
+                        POC por Vela (Línea Blanca)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_candle_poc" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Número de Filas (Bins)</span>
+                        <span id="label_bins">100</span>
+                    </div>
+                    <input type="range" id="slider_bins" class="range-slider" min="20" max="100" step="5" value="100">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Opacidad del Perfil</span>
+                        <span id="label_opacity">10%</span>
+                    </div>
+                    <input type="range" id="slider_opacity" class="range-slider" min="10" max="90" step="5" value="10">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Alineación</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-option active" id="align_left">Izquierda</button>
+                        <button class="btn-option" id="align_right">Derecha</button>
+                    </div>
+                </div>
+
+                <div class="control-row" style="margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 12px;">
+                    <span class="control-label">Línea de POC</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_poc_line">
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">Líneas de Picos</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_peaks">
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Cantidad de Picos</span>
+                        <span id="label_peaks">5</span>
+                    </div>
+                    <input type="range" id="slider_peaks" class="range-slider" min="1" max="5" step="1" value="5">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Calibración Margex</h3>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Ajuste de Precio ($ USD)</span>
+                        <span id="label_price_offset">0 $</span>
+                    </div>
+                    <input type="range" id="slider_price_offset" class="range-slider" min="-100" max="100" step="1" value="0">
+                </div>
+            </div>
+
+            <div class="conn-status">
+                <div class="status-pulse" id="connection_dot"></div>
+                <span id="connection_text">Conectando a Margex...</span>
+            </div>
+        </aside>
+    </div>
+
+    <!-- TradingView Lightweight Charts stand-alone production build -->
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+    <script>
+        // DOM Elements
+        const livePriceEl = document.getElementById('live_price');
+        const priceChangeEl = document.getElementById('price_change');
+        const priceRangeEl = document.getElementById('price_range');
+        const volume24hEl = document.getElementById('volume_24h');
+        const pocValueEl = document.getElementById('poc_value');
+        const toggleEma7 = document.getElementById('toggle_ema7');
+        const toggleEma25 = document.getElementById('toggle_ema25');
+        const toggleVpvr = document.getElementById('toggle_vpvr');
+        const sliderBins = document.getElementById('slider_bins');
+        const sliderOpacity = document.getElementById('slider_opacity');
+        const labelBins = document.getElementById('label_bins');
+        const labelOpacity = document.getElementById('label_opacity');
+        const alignLeftBtn = document.getElementById('align_left');
+        const alignRightBtn = document.getElementById('align_right');
+        const togglePocLine = document.getElementById('toggle_poc_line');
+        const toggleCandlePoc = document.getElementById('toggle_candle_poc');
+        const togglePeaks = document.getElementById('toggle_peaks');
+        const sliderPeaks = document.getElementById('slider_peaks');
+        const labelPeaks = document.getElementById('label_peaks');
+        const connectionDot = document.getElementById('connection_dot');
+        const connectionText = document.getElementById('connection_text');
+        const sliderPriceOffset = document.getElementById('slider_price_offset');
+        const labelPriceOffset = document.getElementById('label_price_offset');
+
+        // Global Chart variables
+        let chart;
+        let candleSeries;
+        let volumeSeries;
+        let ema7Series;
+        let ema25Series;
+        let ws;
+
+        // VPVR configuration state
+        let vpvrEnabled = true;
+        let candlePocEnabled = true;
+        let vpvrBins = 100;
+        let vpvrOpacity = 0.10;
+        let vpvrAlignment = 'left'; // 'left' or 'right'
+        let pocLineEnabled = false;
+        let peaksEnabled = false;
+        let peaksCount = 5;
+
+        // Global data stores
+        let chartData = [];
+        let ema7Data = [];
+        let ema25Data = [];
+        let currentInterval = '1m';
+        // Canvas Setup
+        let canvas = null;
+        let ctx = null;
+
+        function initCanvas() {
+            canvas = document.getElementById('vpvr_canvas');
+            if (canvas) {
+                ctx = canvas.getContext('2d');
+                resizeCanvas();
+            }
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            if (ctx) ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            renderCanvasOverlay();
+        }
+
+        function renderCanvasOverlay() {
+            if (!canvas || !ctx || !candleSeries) return;
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+            const chartPaneWidth = width - 75;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (chartData.length === 0) return;
+
+            const logicalRange = chart ? chart.timeScale().getVisibleLogicalRange() : null;
+            if (!logicalRange) return;
+
+            const fromIdx = Math.max(0, Math.floor(logicalRange.from));
+            const toIdx = Math.min(chartData.length - 1, Math.ceil(logicalRange.to));
+
+            const visibleData = [];
+            for (let i = fromIdx; i <= toIdx; i++) {
+                if (chartData[i]) visibleData.push(chartData[i]);
+            }
+
+            if (visibleData.length === 0) return;
+
+            // Compute visible range min/max prices
+            let minPrice = Infinity;
+            let maxPrice = -Infinity;
+            for (const d of visibleData) {
+                if (d.low < minPrice) minPrice = d.low;
+                if (d.high > maxPrice) maxPrice = d.high;
+            }
+
+            if (minPrice === Infinity || maxPrice === -Infinity || maxPrice <= minPrice) return;
+
+            // Compute visible Volume Profile histogram
+            const step = (maxPrice - minPrice) / vpvrBins;
+            const buyBins = Array(vpvrBins).fill(0);
+            const sellBins = Array(vpvrBins).fill(0);
+            const totalBins = Array(vpvrBins).fill(0);
+
+            for (const d of visibleData) {
+                const lowBin = Math.floor((d.low - minPrice) / step);
+                const highBin = Math.floor((d.high - minPrice) / step);
+                const rangeSpan = Math.max(1, highBin - lowBin + 1);
+                const volShare = d.volume / rangeSpan;
+                const isUp = d.close >= d.open;
+
+                for (let b = Math.max(0, lowBin); b <= Math.min(vpvrBins - 1, highBin); b++) {
+                    if (isUp) buyBins[b] += volShare;
+                    else sellBins[b] += volShare;
+                    totalBins[b] += volShare;
+                }
+            }
+
+            let maxVol = 0;
+            let pocBinIdx = -1;
+            for (let i = 0; i < vpvrBins; i++) {
+                if (totalBins[i] > maxVol) {
+                    maxVol = totalBins[i];
+                    pocBinIdx = i;
+                }
+            }
+
+            if (pocBinIdx !== -1 && pocValueEl) {
+                const pocPrice = minPrice + (pocBinIdx + 0.5) * step;
+                pocValueEl.innerText = pocPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            // 1. Render VPVR Bars (Volume Profile Visible Range) if enabled
+            if (vpvrEnabled && maxVol > 0) {
+                const maxBarWidth = chartPaneWidth * 0.25;
+
+                for (let i = 0; i < vpvrBins; i++) {
+                    const totalVal = totalBins[i];
+                    if (totalVal === 0) continue;
+
+                    const priceStart = minPrice + i * step;
+                    const priceEnd = priceStart + step;
+
+                    const yStart = candleSeries.priceToCoordinate(priceStart);
+                    const yEnd = candleSeries.priceToCoordinate(priceEnd);
+
+                    if (yStart === null || yEnd === null) continue;
+
+                    const yTop = Math.min(yStart, yEnd);
+                    const yBottom = Math.max(yStart, yEnd);
+                    const barHeight = Math.max(1, yBottom - yTop - 0.5);
+
+                    if (yTop < 0 || yBottom > height - 26) continue;
+
+                    const barWidth = (totalVal / maxVol) * maxBarWidth;
+                    const buyWidth = (buyBins[i] / totalVal) * barWidth;
+                    const sellWidth = (sellBins[i] / totalVal) * barWidth;
+
+                    let xStart = 0;
+                    if (vpvrAlignment === 'right') {
+                        xStart = chartPaneWidth - barWidth;
+                    }
+
+                    ctx.fillStyle = `rgba(14, 203, 129, ${vpvrOpacity})`;
+                    ctx.fillRect(xStart, yTop, buyWidth, barHeight);
+
+                    ctx.fillStyle = `rgba(246, 70, 93, ${vpvrOpacity})`;
+                    ctx.fillRect(xStart + buyWidth, yTop, sellWidth, barHeight);
+                }
+
+                // Global POC Line (Cyan dashed line)
+                if (pocLineEnabled && pocBinIdx !== -1) {
+                    const pocPriceCenter = minPrice + (pocBinIdx + 0.5) * step;
+                    const yPoc = candleSeries.priceToCoordinate(pocPriceCenter);
+                    if (yPoc !== null && yPoc >= 0 && yPoc <= height - 26) {
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(0, 210, 255, 0.4)';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(0, yPoc);
+                        ctx.lineTo(chartPaneWidth, yPoc);
+                        ctx.stroke();
+                        ctx.restore();
+
+                        ctx.font = "bold 13px 'JetBrains Mono', monospace";
+                        ctx.fillStyle = 'rgba(0, 210, 255, 0.85)';
+                        ctx.fillText("POC: " + Math.round(pocPriceCenter).toLocaleString('en-US'), 10, yPoc - 3);
+                    }
+                }
+
+                // Peak Lines
+                if (peaksEnabled) {
+                    const peaks = [];
+                    for (let i = 0; i < vpvrBins; i++) {
+                        const val = totalBins[i];
+                        if (val === 0) continue;
+                        const prev = i > 0 ? totalBins[i - 1] : 0;
+                        const next = i < vpvrBins - 1 ? totalBins[i + 1] : 0;
+                        if (val > prev && val > next) {
+                            peaks.push({
+                                index: i,
+                                volume: val,
+                                price: minPrice + (i + 0.5) * step
+                            });
+                        }
+                    }
+
+                    peaks.sort((a, b) => b.volume - a.volume);
+                    const otherPeaks = peaks.filter(p => p.index !== pocBinIdx).slice(0, peaksCount);
+
+                    otherPeaks.forEach(peak => {
+                        const yPeak = candleSeries.priceToCoordinate(peak.price);
+                        if (yPeak !== null && yPeak >= 0 && yPeak <= height - 26) {
+                            ctx.save();
+                            ctx.strokeStyle = 'rgba(0, 210, 255, 0.4)';
+                            ctx.lineWidth = 1;
+                            ctx.setLineDash([3, 3]);
+                            ctx.beginPath();
+                            ctx.moveTo(0, yPeak);
+                            ctx.lineTo(chartPaneWidth, yPeak);
+                            ctx.stroke();
+                            ctx.restore();
+
+                            ctx.font = "bold 13px 'JetBrains Mono', monospace";
+                            ctx.fillStyle = 'rgba(0, 210, 255, 0.85)';
+                            ctx.fillText("Pico: " + Math.round(peak.price).toLocaleString('en-US'), 10, yPeak - 3);
+                        }
+                    });
+                }
+            } else if (!vpvrEnabled && pocValueEl) {
+                pocValueEl.innerText = "---.--";
+            }
+
+            // 2. Render Open Reference Lines (+200, 0, -200)
+            if (currentRefOpenPrice) {
+                const upperPrice = currentRefOpenPrice + 200;
+                const lowerPrice = currentRefOpenPrice - 200;
+                const centerPrice = currentRefOpenPrice;
+
+                const yUpper = candleSeries.priceToCoordinate(upperPrice);
+                const yLower = candleSeries.priceToCoordinate(lowerPrice);
+                const yCenter = candleSeries.priceToCoordinate(centerPrice);
+
+                ctx.save();
+                ctx.strokeStyle = '#00d2ff';
+                ctx.setLineDash([4, 4]);
+
+                // Línea +200
+                if (yUpper !== null && yUpper >= 0 && yUpper <= height) {
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yUpper);
+                    ctx.lineTo(chartPaneWidth, yUpper);
+                    ctx.stroke();
+
+                    ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#00d2ff';
+                    ctx.fillText(`+200 ($${upperPrice.toFixed(1)})`, 16, yUpper - 5);
+                }
+
+                // Línea Central
+                if (yCenter !== null && yCenter >= 0 && yCenter <= height) {
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yCenter);
+                    ctx.lineTo(chartPaneWidth, yCenter);
+                    ctx.stroke();
+                }
+
+                // Línea -200
+                if (yLower !== null && yLower >= 0 && yLower <= height) {
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yLower);
+                    ctx.lineTo(chartPaneWidth, yLower);
+                    ctx.stroke();
+
+                    ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                    ctx.fillStyle = '#00d2ff';
+                    ctx.fillText(`-200 ($${lowerPrice.toFixed(1)})`, 16, yLower + 15);
+                }
+
+                ctx.restore();
+            }
+
+            // 3. Render Per-Candle VPVR Peak (White horizontal line inside each candle's range)
+            if (candlePocEnabled) {
+                const x0 = chart.timeScale().logicalToCoordinate(fromIdx);
+                const x1 = chart.timeScale().logicalToCoordinate(fromIdx + 1);
+                const calculatedSpacing = (x0 !== null && x1 !== null) ? Math.abs(x1 - x0) : 6;
+                const candleLineWidth = Math.max(3, Math.floor(calculatedSpacing * 0.75));
+                const halfWidth = candleLineWidth / 2;
+
+                ctx.save();
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 1.5;
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                ctx.shadowBlur = 4;
+
+                for (let i = fromIdx; i <= toIdx; i++) {
+                    const candle = chartData[i];
+                    if (!candle) continue;
+
+                    const x = chart.timeScale().logicalToCoordinate(i);
+                    if (x === null || x < -10 || x > chartPaneWidth + 10) continue;
+
+                    // Restrict the visible VPVR volume profile (totalBins) to this candle's price range [candle.low, candle.high]
+                    const lowBin = Math.max(0, Math.floor((candle.low - minPrice) / step));
+                    const highBin = Math.min(vpvrBins - 1, Math.floor((candle.high - minPrice) / step));
+
+                    let maxBinVol = -1;
+                    let bestBinIdx = -1;
+                    for (let b = lowBin; b <= highBin; b++) {
+                        if (totalBins[b] > maxBinVol) {
+                            maxBinVol = totalBins[b];
+                            bestBinIdx = b;
+                        }
+                    }
+
+                    if (bestBinIdx === -1 || maxBinVol <= 0) continue;
+
+                    const candlePocPrice = minPrice + (bestBinIdx + 0.5) * step;
+                    const y = candleSeries.priceToCoordinate(candlePocPrice);
+                    if (y === null || y < 0 || y > height - 26) continue;
+
+                    const yPixel = Math.round(y) - 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(x - halfWidth, yPixel);
+                    ctx.lineTo(x + halfWidth, yPixel);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+
+        // Initialize Lightweight Chart
+        function initChart() {
+            const chartDiv = document.getElementById('tradingview_chart');
+            chart = LightweightCharts.createChart(chartDiv, {
+                layout: {
+                    background: { type: 'solid', color: '#0c0d12' },
+                    textColor: '#90a4ae',
+                    fontSize: 12,
+                    fontFamily: "'Outfit', sans-serif"
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.03)' }
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    scaleMargins: {
+                        top: 0,
+                        bottom: 0
+                    },
+                    alignLabels: false,
+                    entireTextOnly: false
+                },
+                timeScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    timeVisible: true,
+                    secondsVisible: false,
+                    barSpacing: 6,
+                    tickMarkFormatter: (time, tickMarkType, locale) => {
+                        const date = new Date(time * 1000);
+                        const options = { timeZone: 'America/Argentina/Buenos_Aires' };
+                        if (tickMarkType === 0) return date.toLocaleDateString('es-AR', { ...options, year: 'numeric' });
+                        if (tickMarkType === 1) return date.toLocaleDateString('es-AR', { ...options, month: 'short' });
+                        if (tickMarkType === 2) return date.toLocaleDateString('es-AR', { ...options, day: 'numeric' });
+                        if (tickMarkType === 3) return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', hour12: false });
+                        if (tickMarkType === 4) return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                        return null;
+                    }
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                    vertLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed },
+                    horzLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed }
+                },
+                localization: {
+                    locale: 'es-AR',
+                    timeFormatter: (timestamp) => {
+                        const date = new Date(timestamp * 1000);
+                        const isIntraday = currentInterval !== '1d';
+                        const options = { timeZone: 'America/Argentina/Buenos_Aires' };
+                        if (isIntraday) {
+                            return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit' });
+                        } else {
+                            return date.toLocaleDateString('es-AR', { ...options, year: 'numeric', month: '2-digit', day: '2-digit' });
+                        }
+                    }
+                }
+            });
+
+            // Add candlestick series
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#0ecb81',
+                downColor: '#f6465d',
+                borderVisible: false,
+                wickUpColor: '#0ecb81',
+                wickDownColor: '#f6465d',
+                autoscaleInfoProvider: () => {
+                    if (currentRefOpenPrice && currentRefOpenPrice > 0) {
+                        return {
+                            priceRange: {
+                                minValue: currentRefOpenPrice - 300,
+                                maxValue: currentRefOpenPrice + 300,
+                            },
+                            margins: {
+                                above: 0,
+                                below: 0,
+                            },
+                        };
+                    }
+                    return null;
+                }
+            });
+
+
+
+            // Add EMA series
+            ema7Series = chart.addLineSeries({
+                color: '#FF0000',
+                lineWidth: 1.5,
+                priceLineVisible: false,
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => null
+            });
+
+            ema25Series = chart.addLineSeries({
+                color: '#00FF00',
+                lineWidth: 1.5,
+                priceLineVisible: false,
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => null
+            });
+
+            // Subscribe to visible range changes to recalculate overlay
+            chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+                requestAnimationFrame(renderCanvasOverlay);
+            });
+
+            // Handle Resize
+            const resizeObserver = new ResizeObserver(entries => {
+                if (entries.length === 0 || !entries[0].contentRect) return;
+                const { width, height } = entries[0].contentRect;
+                chart.resize(width, height);
+                resizeCanvas();
+            });
+            resizeObserver.observe(chartDiv);
+            resizeCanvas();
+        }
+
+        // Calculate EMA
+        function calculateEMA(data, length) {
+            const ema = [];
+            const k = 2 / (length + 1);
+            let prevEma = data[0].close;
+            ema.push({ time: data[0].time, value: prevEma });
+
+            for (let i = 1; i < data.length; i++) {
+                const val = data[i].close * k + prevEma * (1 - k);
+                ema.push({ time: data[i].time, value: val });
+                prevEma = val;
+            }
+            return ema;
+        }
+
+        // Margex Data Fetching & Stream Integration
+        const MARGEX_INTERVAL_MAP = {
+            '1m': '1M',
+            '5m': '5M',
+            '15m': '15M',
+            '30m': '30M',
+            '1h': '60M',
+            '4h': '4H',
+            '1d': '1D'
+        };
+
+        const BYBIT_INTERVAL_MAP = {
+            '1m': '1',
+            '5m': '5',
+            '15m': '15',
+            '30m': '30',
+            '1h': '60',
+            '4h': '240',
+            '1d': 'D'
+        };
+
+        let pollingTimer = null;
+        let priceOffset = 0;
+
+        function calculateCandlePOC(d) {
+            if (!d || d.high === undefined || d.low === undefined) return d ? d.close : 0;
+            if (d.high === d.low) return d.close;
+
+            const bodyMin = Math.min(d.open, d.close);
+            const bodyMax = Math.max(d.open, d.close);
+            const bodyCenter = (bodyMin + bodyMax) / 2;
+            const typicalPrice = (d.high + d.low + d.close) / 3;
+
+            const binsCount = 20;
+            const step = (d.high - d.low) / binsCount;
+            let maxWeight = -1;
+            let pocPrice = bodyCenter;
+
+            for (let i = 0; i < binsCount; i++) {
+                const binPrice = d.low + (i + 0.5) * step;
+                let weight = 1.0;
+                if (binPrice >= bodyMin && binPrice <= bodyMax) {
+                    weight += 3.5;
+                }
+
+                const distToBodyCenter = Math.abs(binPrice - bodyCenter) / (d.high - d.low || 1);
+                const distToTypical = Math.abs(binPrice - typicalPrice) / (d.high - d.low || 1);
+
+                const density = weight * Math.exp(-4 * distToBodyCenter) * Math.exp(-2 * distToTypical);
+
+                if (density > maxWeight) {
+                    maxWeight = density;
+                    pocPrice = binPrice;
+                }
+            }
+            return pocPrice;
+        }
+
+        function normalizeKlineData(raw) {
+            let items = Array.isArray(raw) ? raw : (raw.data || raw.result || raw.klines || []);
+            if (!Array.isArray(items)) return [];
+
+            const parsed = items.map(d => {
+                let candle = null;
+                if (Array.isArray(d)) {
+                    const rawTime = d[0];
+                    const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    candle = {
+                        time: timeSec,
+                        open: parseFloat(d[1]),
+                        high: parseFloat(d[2]),
+                        low: parseFloat(d[3]),
+                        close: parseFloat(d[4]),
+                        volume: parseFloat(d[5] || 0)
+                    };
+                } else if (typeof d === 'object' && d !== null) {
+                    const rawTime = d.time || d.timestamp || d.t || d.openTime;
+                    const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    candle = {
+                        time: timeSec,
+                        open: parseFloat(d.open || d.o),
+                        high: parseFloat(d.high || d.h),
+                        low: parseFloat(d.low || d.l),
+                        close: parseFloat(d.close || d.c),
+                        volume: parseFloat(d.volume || d.vol || d.v || 0)
+                    };
+                }
+                if (candle && !isNaN(candle.time) && !isNaN(candle.close)) {
+                    candle.poc = calculateCandlePOC(candle);
+                    return candle;
+                }
+                return null;
+            }).filter(d => d !== null)
+              .sort((a, b) => a.time - b.time);
+
+            const unique = [];
+            let lastTime = null;
+            for (const candle of parsed) {
+                if (candle.time !== lastTime) {
+                    unique.push(candle);
+                    lastTime = candle.time;
+                }
+            }
+            return unique;
+        }
+
+        async function fetchMargexData() {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
+                const margexUrl = `https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=1000`;
+                
+                let klinesData = [];
+                try {
+                    const klinesRes = await fetch(margexUrl);
+                    if (klinesRes.ok) {
+                        const text = await klinesRes.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            klinesData = normalizeKlineData(JSON.parse(text));
+                        }
+                    }
+                } catch (fetchErr) {
+                    console.warn("Margex direct fetch fallback: ", fetchErr);
+                }
+
+                if (klinesData.length === 0) {
+                    const fallbackUrls = [
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=1000`,
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`,
+                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`
+                    ];
+
+                    for (const fbUrl of fallbackUrls) {
+                        try {
+                            const fbRes = await fetch(fbUrl);
+                            if (fbRes.ok) {
+                                const text = await fbRes.text();
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    klinesData = normalizeKlineData(JSON.parse(text));
+                                    if (klinesData.length > 0) break;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+
+                if (klinesData.length === 0) {
+                    throw new Error("No data received from Margex data sources");
+                }
+
+                if (priceOffset !== 0) {
+                    klinesData = klinesData.map(c => ({
+                        ...c,
+                        open: c.open + priceOffset,
+                        high: c.high + priceOffset,
+                        low: c.low + priceOffset,
+                        close: c.close + priceOffset
+                    }));
+                }
+
+                chartData = klinesData;
+                ema7Data = calculateEMA(chartData, 7);
+                ema25Data = calculateEMA(chartData, 25);
+
+                candleSeries.setData(chartData);
+                if (toggleEma7 && toggleEma7.checked) ema7Series.setData(ema7Data);
+                if (toggleEma25 && toggleEma25.checked) ema25Series.setData(ema25Data);
+
+                updateRefOpenAndLines();
+
+
+
+                if (chartData.length > 0) {
+                    const latest = chartData[chartData.length - 1];
+                    const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                    const changePercent = ((latest.close - first24h.open) / first24h.open) * 100;
+                    
+                    let high24h = -Infinity;
+                    let low24h = Infinity;
+                    let vol24h = 0;
+                    const slice24h = chartData.slice(-1440);
+                    for (const c of slice24h) {
+                        if (c.high > high24h) high24h = c.high;
+                        if (c.low < low24h) low24h = c.low;
+                        vol24h += c.volume;
+                    }
+
+                    updateHeaderStats({
+                        c: latest.close,
+                        P: changePercent,
+                        h: high24h,
+                        l: low24h,
+                        q: vol24h * latest.close
+                    });
+                }
+
+                connectMargexStream();
+
+            } catch (err) {
+                console.error("Error fetching Margex data: ", err);
+                if (connectionText) connectionText.innerText = "Error cargando datos de Margex.";
+                if (connectionDot) {
+                    connectionDot.style.backgroundColor = "var(--binance-red)";
+                    connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+                }
+            }
+        }
+
+        function connectMargexStream() {
+            if (ws) {
+                try { ws.onclose = null; ws.close(); } catch(e) {}
+                ws = null;
+            }
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+
+            let wsAttempted = false;
+            try {
+                ws = new WebSocket(`wss://api.margex.com/v1/ws`);
+
+                ws.onopen = () => {
+                    wsAttempted = true;
+                    if (connectionText) connectionText.innerText = "Margex Live WS Activo";
+                    if (connectionDot) {
+                        connectionDot.style.backgroundColor = "var(--binance-green)";
+                        connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+                    }
+
+                    const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                    ws.send(JSON.stringify({
+                        op: "subscribe",
+                        args: [`klines.${intervalParam}.BTCUSD`, `ticker.BTCUSD`]
+                    }));
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.topic && msg.topic.includes('kline') && msg.data) {
+                            const kData = normalizeKlineData([msg.data])[0];
+                            if (kData) updateRealtimeKlineFromCandle(kData);
+                        } else if (msg.topic && msg.topic.includes('ticker') && msg.data) {
+                            updateHeaderStats(msg.data);
+                        }
+                    } catch(e) {}
+                };
+
+                ws.onerror = () => { startPollingFallback(); };
+                ws.onclose = () => {
+                    if (!wsAttempted) {
+                        startPollingFallback();
+                    } else {
+                        if (connectionText) connectionText.innerText = "Reconectando a Margex...";
+                        if (connectionDot) {
+                            connectionDot.style.backgroundColor = "var(--binance-yellow)";
+                            connectionDot.style.boxShadow = "0 0 8px var(--binance-yellow)";
+                        }
+                        setTimeout(connectMargexStream, 5000);
+                    }
+                };
+            } catch (e) {
+                startPollingFallback();
+            }
+        }
+
+        function startPollingFallback() {
+            if (connectionText) connectionText.innerText = "Margex Live (HTTP Polling)";
+            if (connectionDot) {
+                connectionDot.style.backgroundColor = "var(--binance-green)";
+                connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+            }
+
+            if (!pollingTimer) {
+                pollingTimer = setInterval(async () => {
+                    await pollMargexLatest();
+                }, 3000);
+            }
+        }
+
+        async function pollMargexLatest() {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
+                let candles = [];
+                try {
+                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=5`);
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            candles = normalizeKlineData(JSON.parse(text));
+                        }
+                    }
+                } catch(e) {}
+
+                if (candles.length === 0) {
+                    const fallbackUrls = [
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=5`,
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`,
+                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`
+                    ];
+                    for (const fbUrl of fallbackUrls) {
+                        try {
+                            const fbRes = await fetch(fbUrl);
+                            if (fbRes.ok) {
+                                const text = await fbRes.text();
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    candles = normalizeKlineData(JSON.parse(text));
+                                    if (candles.length > 0) break;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+
+                if (candles.length > 0) {
+                    let latest = candles[candles.length - 1];
+                    if (priceOffset !== 0) {
+                        latest = {
+                            ...latest,
+                            open: latest.open + priceOffset,
+                            high: latest.high + priceOffset,
+                            low: latest.low + priceOffset,
+                            close: latest.close + priceOffset
+                        };
+                    }
+                    updateRealtimeKlineFromCandle(latest);
+
+                    if (chartData.length > 0) {
+                        const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                        const changePercent = ((latest.close - first24h.open) / first24h.open) * 100;
+                        
+                        let high24h = latest.high;
+                        let low24h = latest.low;
+                        const slice24h = chartData.slice(-100);
+                        for (const c of slice24h) {
+                            if (c.high > high24h) high24h = c.high;
+                            if (c.low < low24h) low24h = c.low;
+                        }
+
+                        updateHeaderStats({
+                            c: latest.close,
+                            P: changePercent,
+                            h: high24h,
+                            l: low24h,
+                            q: (slice24h.reduce((acc, curr) => acc + curr.volume, 0)) * latest.close
+                        });
+                    }
+                }
+            } catch(e) {}
+        }
+
+        let lastPrice = 0;
+        let refCandleInterval = '15m'; // '15m' (defecto) o '5m'
+        let currentRefOpenPrice = null;
+        let lineUpper200 = null;
+        let lineLower200 = null;
+        let lineCenter = null;
+
+        function getRefOpenPrice(data, interval = refCandleInterval) {
+            if (!data || data.length === 0) return null;
+            const latest = data[data.length - 1];
+            let periodSec = 900;
+            if (interval === '5m') periodSec = 300;
+            else if (interval === '15m') periodSec = 900;
+            else if (interval === '30m') periodSec = 1800;
+            const startSec = Math.floor(latest.time / periodSec) * periodSec;
+
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (data[i].time === startSec) {
+                    return data[i].open;
+                }
+            }
+
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (data[i].time <= startSec) {
+                    return data[i].open;
+                }
+            }
+
+            return latest.open;
+        }
+
+        function updateRefOpenAndLines() {
+            if (!chartData || chartData.length === 0) return;
+            
+            const newRefOpen = getRefOpenPrice(chartData, refCandleInterval);
+            if (!newRefOpen || isNaN(newRefOpen)) return;
+            currentRefOpenPrice = newRefOpen;
+
+            const upperPrice = currentRefOpenPrice + 200;
+            const lowerPrice = currentRefOpenPrice - 200;
+            const centerPrice = currentRefOpenPrice;
+
+            if (!lineUpper200) {
+                lineUpper200 = candleSeries.createPriceLine({
+                    price: upperPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: true,
+                    title: '+200',
+                });
+            } else {
+                lineUpper200.applyOptions({ price: upperPrice });
+            }
+
+            if (!lineCenter) {
+                lineCenter = candleSeries.createPriceLine({
+                    price: centerPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: false,
+                    title: '',
+                });
+            } else {
+                lineCenter.applyOptions({ price: centerPrice });
+            }
+
+            if (!lineLower200) {
+                lineLower200 = candleSeries.createPriceLine({
+                    price: lowerPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: true,
+                    title: '-200',
+                });
+            } else {
+                lineLower200.applyOptions({ price: lowerPrice });
+            }
+
+            if (chart) {
+                chart.priceScale('right').applyOptions({});
+                renderCanvasOverlay();
+            }
+        }
+
+        function updateHeaderStats(tick) {
+            if (!livePriceEl) return;
+            const price = parseFloat(tick.c);
+            livePriceEl.innerText = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            if (lastPrice !== 0 && price !== lastPrice) {
+                if (price > lastPrice) {
+                    livePriceEl.className = "stat-value price up";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(14, 203, 129, 0.4)";
+                } else {
+                    livePriceEl.className = "stat-value price down";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(246, 70, 93, 0.4)";
+                }
+            }
+            lastPrice = price;
+
+            updateRefOpenAndLines();
+
+            setTimeout(() => {
+                if (livePriceEl) livePriceEl.style.textShadow = "none";
+            }, 200);
+
+            if (priceChangeEl) {
+                const changePercent = parseFloat(tick.P);
+                priceChangeEl.innerText = (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%";
+                priceChangeEl.className = "stat-value " + (changePercent >= 0 ? "up" : "down");
+            }
+
+            if (priceRangeEl) {
+                const high = parseFloat(tick.h).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                const low = parseFloat(tick.l).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                priceRangeEl.innerText = `${high} / ${low}`;
+            }
+
+            if (volume24hEl) {
+                const quoteVolume = parseFloat(tick.q) / 1000000;
+                volume24hEl.innerText = quoteVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " M";
+            }
+        }
+
+        function updateRealtimeKlineFromCandle(candle) {
+            if (candle && candle.poc === undefined) candle.poc = calculateCandlePOC(candle);
+            const time = candle.time;
+            const lastIdx = chartData.length - 1;
+
+            if (lastIdx >= 0 && chartData[lastIdx].time === time) {
+                chartData[lastIdx] = candle;
+
+                const k7 = 2 / (7 + 1);
+                const prevEma7 = ema7Data[lastIdx - 1] ? ema7Data[lastIdx - 1].value : candle.close;
+                ema7Data[lastIdx] = { time: time, value: candle.close * k7 + prevEma7 * (1 - k7) };
+
+                const k25 = 2 / (25 + 1);
+                const prevEma25 = ema25Data[lastIdx - 1] ? ema25Data[lastIdx - 1].value : candle.close;
+                ema25Data[lastIdx] = { time: time, value: candle.close * k25 + prevEma25 * (1 - k25) };
+            } else if (lastIdx >= 0 && time > chartData[lastIdx].time) {
+                chartData.push(candle);
+
+                const k7 = 2 / (7 + 1);
+                const prevEma7 = ema7Data[lastIdx].value;
+                ema7Data.push({ time: time, value: candle.close * k7 + prevEma7 * (1 - k7) });
+
+                const k25 = 2 / (25 + 1);
+                const prevEma25 = ema25Data[lastIdx].value;
+                ema25Data.push({ time: time, value: candle.close * k25 + prevEma25 * (1 - k25) });
+
+                if (chartData.length > 1200) {
+                    chartData.shift();
+                    ema7Data.shift();
+                    ema25Data.shift();
+                }
+            }
+
+            if (candleSeries) candleSeries.update(candle);
+
+            if (toggleEma7 && toggleEma7.checked && ema7Data.length > 0) {
+                ema7Series.update(ema7Data[ema7Data.length - 1]);
+            }
+            if (toggleEma25 && toggleEma25.checked && ema25Data.length > 0) {
+                ema25Series.update(ema25Data[ema25Data.length - 1]);
+            }
+
+            updateRefOpenAndLines();
+        }
+
+        // Toggle Switch & Slider Listeners
+        if (toggleEma7) {
+            toggleEma7.addEventListener('change', () => {
+                if (toggleEma7.checked) {
+                    ema7Series.setData(ema7Data);
+                } else {
+                    ema7Series.setData([]);
+                }
+            });
+        }
+
+        if (toggleEma25) {
+            toggleEma25.addEventListener('change', () => {
+                if (toggleEma25.checked) {
+                    ema25Series.setData(ema25Data);
+                } else {
+                    ema25Series.setData([]);
+                }
+            });
+        }
+
+        if (toggleVpvr) {
+            toggleVpvr.addEventListener('change', (e) => {
+                vpvrEnabled = e.target.checked;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (sliderBins) {
+            sliderBins.addEventListener('input', (e) => {
+                vpvrBins = parseInt(e.target.value);
+                if (labelBins) labelBins.innerText = vpvrBins;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (sliderOpacity) {
+            sliderOpacity.addEventListener('input', (e) => {
+                vpvrOpacity = parseInt(e.target.value) / 100;
+                if (labelOpacity) labelOpacity.innerText = e.target.value + '%';
+                renderCanvasOverlay();
+            });
+        }
+
+        if (alignLeftBtn && alignRightBtn) {
+            alignLeftBtn.addEventListener('click', () => {
+                vpvrAlignment = 'left';
+                alignLeftBtn.classList.add('active');
+                alignRightBtn.classList.remove('active');
+                renderCanvasOverlay();
+            });
+            alignRightBtn.addEventListener('click', () => {
+                vpvrAlignment = 'right';
+                alignRightBtn.classList.add('active');
+                alignLeftBtn.classList.remove('active');
+                renderCanvasOverlay();
+            });
+        }
+
+        if (togglePocLine) {
+            togglePocLine.addEventListener('change', (e) => {
+                pocLineEnabled = e.target.checked;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (toggleCandlePoc) {
+            toggleCandlePoc.addEventListener('change', (e) => {
+                candlePocEnabled = e.target.checked;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (togglePeaks) {
+            togglePeaks.addEventListener('change', (e) => {
+                peaksEnabled = e.target.checked;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (sliderPeaks) {
+            sliderPeaks.addEventListener('input', (e) => {
+                peaksCount = parseInt(e.target.value);
+                if (labelPeaks) labelPeaks.innerText = peaksCount;
+                renderCanvasOverlay();
+            });
+        }
+
+        if (sliderPriceOffset) {
+            sliderPriceOffset.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                const diff = val - priceOffset;
+                priceOffset = val;
+                if (labelPriceOffset) labelPriceOffset.innerText = (priceOffset > 0 ? "+" : "") + priceOffset + " $";
+
+                if (diff !== 0 && chartData.length > 0) {
+                    chartData = chartData.map(c => ({
+                        ...c,
+                        open: c.open + diff,
+                        high: c.high + diff,
+                        low: c.low + diff,
+                        close: c.close + diff
+                    }));
+                    ema7Data = calculateEMA(chartData, 7);
+                    ema25Data = calculateEMA(chartData, 25);
+
+                    candleSeries.setData(chartData);
+                    if (toggleEma7.checked) ema7Series.setData(ema7Data);
+                    if (toggleEma25.checked) ema25Series.setData(ema25Data);
+
+                    if (chartData.length > 0) {
+                        const latest = chartData[chartData.length - 1];
+                        const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                        updateHeaderStats({
+                            c: latest.close,
+                            P: ((latest.close - first24h.open) / first24h.open) * 100,
+                            h: Math.max(...chartData.slice(-100).map(c => c.high)),
+                            l: Math.min(...chartData.slice(-100).map(c => c.low)),
+                            q: chartData.slice(-100).reduce((acc, curr) => acc + curr.volume, 0) * latest.close
+                        });
+                    }
+                }
+            });
+        }
+
+        const refTf5mBtn = document.getElementById('ref_tf_5m');
+        const refTf15mBtn = document.getElementById('ref_tf_15m');
+        const refTf30mBtn = document.getElementById('ref_tf_30m');
+
+        const refBtns = [
+            { btn: refTf5mBtn, tf: '5m' },
+            { btn: refTf15mBtn, tf: '15m' },
+            { btn: refTf30mBtn, tf: '30m' }
+        ];
+
+        refBtns.forEach(item => {
+            if (item.btn) {
+                item.btn.addEventListener('click', () => {
+                    refBtns.forEach(i => i.btn && i.btn.classList.remove('active'));
+                    item.btn.classList.add('active');
+                    refCandleInterval = item.tf;
+                    updateRefOpenAndLines();
+                });
+            }
+        });
+
+        // Change candle timeframe
+        function changeInterval(newInterval) {
+            if (currentInterval === newInterval) return;
+            currentInterval = newInterval;
+
+            document.querySelectorAll('.interval-btn').forEach(btn => {
+                if (btn.getAttribute('data-interval') === newInterval) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const intervalNames = {
+                '1m': '1 Minuto (1m)',
+                '5m': '5 Minutos (5m)',
+                '15m': '15 Minutos (15m)',
+                '30m': '30 Minutos (30m)',
+                '1h': '1 Hora (1h)',
+                '4h': '4 Horas (4h)',
+                '1d': '1 Día (1d)'
+            };
+            const subtitleEl = document.querySelector('.coin-subtitle');
+            if (subtitleEl) subtitleEl.innerText = `Intervalo: ${intervalNames[newInterval]}`;
+
+            chartData = [];
+            ema7Data = [];
+            ema25Data = [];
+
+            candleSeries.setData([]);
+            ema7Series.setData([]);
+            ema25Series.setData([]);
+
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+
+            if (ws) {
+                try { ws.onclose = null; ws.close(); } catch(e) {}
+                ws = null;
+            }
+
+            fetchMargexData();
+        }
+
+        document.querySelectorAll('.interval-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const newInterval = e.target.getAttribute('data-interval');
+                changeInterval(newInterval);
+            });
+        });
+
+        // Evaluate timeframe trend status
+        async function evaluateTimeframeTrend(interval) {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[interval] || interval;
+                let klines = [];
+                try {
+                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=50`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        klines = normalizeKlineData(json);
+                    }
+                } catch(e) {}
+
+                if (klines.length === 0) {
+                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=50`);
+                    if (fbRes.ok) {
+                        const json = await fbRes.json();
+                        klines = normalizeKlineData(json);
+                    }
+                }
+
+                if (!Array.isArray(klines) || klines.length < 25) return 'consolidation';
+
+                const closes = klines.map(k => k.close);
+                const highs = klines.map(k => k.high);
+                const lows = klines.map(k => k.low);
+
+                function getEMA(data, length) {
+                    const k = 2 / (length + 1);
+                    let ema = data[0];
+                    for (let i = 1; i < data.length; i++) {
+                        ema = data[i] * k + ema * (1 - k);
+                    }
+                    return ema;
+                }
+
+                const ema7 = getEMA(closes, 7);
+                const ema25 = getEMA(closes, 25);
+
+                let totalRange = 0;
+                const count = Math.min(14, klines.length);
+                for (let i = klines.length - count; i < klines.length; i++) {
+                    totalRange += (highs[i] - lows[i]);
+                }
+                const avgRange = totalRange / count;
+
+                const diff = ema7 - ema25;
+                const threshold = avgRange * 0.20;
+
+                if (Math.abs(diff) < threshold) {
+                    return 'consolidation';
+                } else if (diff > 0) {
+                    return 'bullish';
+                } else {
+                    return 'bearish';
+                }
+            } catch (e) {
+                return 'consolidation';
+            }
+        }
+
+        async function updateAllTimeframeTrends() {
+            const intervals = ['1m', '5m', '15m', '30m', '1h', '4h', '1d'];
+            const results = await Promise.all(intervals.map(tf => evaluateTimeframeTrend(tf)));
+            
+            intervals.forEach((tf, index) => {
+                const status = results[index];
+                const btn = document.querySelector(`.tf-trend-item[data-interval="${tf}"]`);
+                if (btn) {
+                    btn.classList.remove('bullish', 'bearish', 'consolidation');
+                    btn.classList.add(status);
+                }
+            });
+        }
+
+        // Initialize script
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            initCanvas();
+            fetchMargexData();
+            updateAllTimeframeTrends();
+            setInterval(updateAllTimeframeTrends, 20000);
+        });
+    </script>
+</body>
+</html>
