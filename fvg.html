@@ -742,7 +742,7 @@
                 <div class="control-row">
                     <span class="control-label">Línea 50% (CE)</span>
                     <label class="switch">
-                        <input type="checkbox" id="toggle_fvg_midline" checked>
+                        <input type="checkbox" id="toggle_fvg_midline">
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -750,17 +750,17 @@
                 <div class="slider-container">
                     <div class="slider-header">
                         <span>Tamaño Mínimo Gap ($ USD)</span>
-                        <span id="label_fvg_min_gap">40 $</span>
+                        <span id="label_fvg_min_gap">35 $</span>
                     </div>
-                    <input type="range" id="slider_fvg_min_gap" class="range-slider" min="0" max="200" step="5" value="40">
+                    <input type="range" id="slider_fvg_min_gap" class="range-slider" min="0" max="200" step="5" value="35">
                 </div>
 
                 <div class="slider-container">
                     <div class="slider-header">
                         <span>Opacidad FVG</span>
-                        <span id="label_fvg_opacity">25%</span>
+                        <span id="label_fvg_opacity">10%</span>
                     </div>
-                    <input type="range" id="slider_fvg_opacity" class="range-slider" min="10" max="80" step="5" value="25">
+                    <input type="range" id="slider_fvg_opacity" class="range-slider" min="10" max="80" step="5" value="10">
                 </div>
             </div>
 
@@ -839,9 +839,9 @@
         // FVG configuration state
         let fvgEnabled = true;
         let fvgActiveOnly = true;
-        let fvgMidlineEnabled = true;
-        let fvgMinGapUSD = 40;
-        let fvgOpacity = 0.25;
+        let fvgMidlineEnabled = false;
+        let fvgMinGapUSD = 35;
+        let fvgOpacity = 0.10;
 
         // Global data stores
         let chartData = [];
@@ -1245,7 +1245,7 @@
         }
 
         // Calculate Fair Value Gaps (FVG)
-        function calculateFVGs(data, minGapUSD = 40) {
+        function calculateFVGs(data, minGapUSD = 35) {
             if (!data || data.length < 3) return [];
             const fvgs = [];
 
