@@ -548,6 +548,10 @@
 
         <div class="stats-grid">
             <div class="stat-item">
+                <span class="stat-label" style="color: var(--binance-yellow);">Precio Cursor</span>
+                <span class="stat-value price" id="cursor_price" style="color: var(--binance-yellow);">---.--</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">Precio</span>
                 <span class="stat-value price" id="live_price">---.--</span>
             </div>
@@ -1420,6 +1424,29 @@
             // Subscribe to visible range changes to recalculate overlay
             chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
                 requestAnimationFrame(renderCanvasOverlay);
+            });
+
+            // Subscribe to crosshair move to display price at mouse position in top header (left of Precio)
+            chart.subscribeCrosshairMove((param) => {
+                const cursorPriceEl = document.getElementById('cursor_price');
+                if (!cursorPriceEl) return;
+
+                if (!param || !param.point || param.point.x < 0 || param.point.y < 0 || param.point.x > chartDiv.clientWidth || param.point.y > chartDiv.clientHeight) {
+                    cursorPriceEl.innerText = "---.--";
+                    return;
+                }
+
+                const cursorPrice = candleSeries.coordinateToPrice(param.point.y);
+                if (cursorPrice !== null && !isNaN(cursorPrice)) {
+                    cursorPriceEl.innerText = cursorPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                } else {
+                    cursorPriceEl.innerText = "---.--";
+                }
+            });
+
+            chartDiv.addEventListener('mouseleave', () => {
+                const cursorPriceEl = document.getElementById('cursor_price');
+                if (cursorPriceEl) cursorPriceEl.innerText = "---.--";
             });
 
             // Handle Resize
