@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC/USD Margex Trading Dashboard with VPVR</title>
+    <!-- Google Fonts for premium trading look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #080a0f;
+            --panel-bg: rgba(17, 22, 37, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f4f8;
+            --text-secondary: #90a4ae;
+            --binance-green: #0ecb81;
+            --binance-red: #f6465d;
+            --binance-yellow: #f0b90b;
+            --glow-green: rgba(14, 203, 129, 0.15);
+            --glow-red: rgba(246, 70, 93, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Live Header Stats */
+        .dashboard-header {
+            background-color: rgba(11, 14, 22, 0.95);
+            border-bottom: 1px solid var(--panel-border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .coin-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--binance-yellow), #e28a00);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #000;
+            font-size: 16px;
+            box-shadow: 0 0 12px rgba(240, 185, 11, 0.4);
+        }
+
+        .coin-name {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .coin-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .coin-title span {
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .coin-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .stats-grid {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-value.price {
+            font-size: 22px;
+            transition: color 0.15s ease, text-shadow 0.15s ease;
+        }
+
+        .stat-value.up {
+            color: var(--binance-green);
+        }
+
+        .stat-value.down {
+            color: var(--binance-red);
+        }
+
+        /* Main Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Chart Wrapper */
+        .chart-wrapper {
+            flex: 1;
+            position: relative;
+            background-color: #0c0d12;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #main_chart_container {
+            position: relative;
+            width: 100%;
+            height: 68%;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #tradingview_chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        #vpvr_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Oscilador Oracle Sub-Pane */
+        #oscillator_container {
+            position: relative;
+            width: 100%;
+            height: 32%;
+            border-top: 1px solid var(--panel-border);
+            background-color: #08090d;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+
+        #oscillator_container.hidden {
+            display: none;
+        }
+
+        #oscillator_chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .osc-header-overlay {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+            background: rgba(11, 14, 23, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .osc-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: #00d2ff;
+            text-transform: uppercase;
+        }
+
+        .osc-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .osc-badge.bullish {
+            background: rgba(14, 203, 129, 0.2);
+            color: var(--binance-green);
+            border: 1px solid rgba(14, 203, 129, 0.4);
+        }
+
+        .osc-badge.bearish {
+            background: rgba(246, 70, 93, 0.2);
+            color: var(--binance-red);
+            border: 1px solid rgba(246, 70, 93, 0.4);
+        }
+
+        .osc-badge.neutral {
+            background: rgba(240, 185, 11, 0.2);
+            color: var(--binance-yellow);
+            border: 1px solid rgba(240, 185, 11, 0.4);
+        }
+
+        .osc-metrics {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Sidebar Control Panel */
+        .control-sidebar {
+            width: 280px;
+            background-color: rgba(11, 14, 23, 0.95);
+            border-left: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 24px;
+            overflow-y: auto;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        /* Switches & Controls styling */
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .control-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Custom Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .2s;
+            border-radius: 20px;
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-toggle {
+            background-color: var(--binance-yellow);
+        }
+
+        input:checked + .slider-toggle:before {
+            transform: translateX(18px);
+            background-color: #000;
+        }
+
+        /* Custom Slider Styling */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 450ms ease-in;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--binance-yellow);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-group.grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .btn-option {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-option.active {
+            background: var(--binance-yellow);
+            color: #000;
+        }
+
+        /* Status Indicator Banner */
+        .conn-status {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 16px;
+        }
+
+        .status-pulse {
+            width: 6px;
+            height: 6px;
+            background-color: var(--binance-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--binance-green);
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Tooltip style */
+        .tooltip {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            padding: 10px;
+            border-left: 3px solid var(--binance-yellow);
+        }
+
+        /* Top-Left Timeframe Trend Bar */
+        .tf-trend-bar {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(11, 14, 23, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .tf-trend-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .tf-trend-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tf-trend-item.active {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+        }
+
+        .tf-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--text-secondary);
+            display: inline-block;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Trend Status Styles */
+        .tf-trend-item.bullish {
+            color: var(--binance-green);
+            background: rgba(14, 203, 129, 0.12);
+            border-color: rgba(14, 203, 129, 0.3);
+        }
+        .tf-trend-item.bullish .tf-dot {
+            background-color: var(--binance-green);
+            box-shadow: 0 0 6px var(--binance-green);
+        }
+
+        .tf-trend-item.bearish {
+            color: var(--binance-red);
+            background: rgba(246, 70, 93, 0.12);
+            border-color: rgba(246, 70, 93, 0.3);
+        }
+        .tf-trend-item.bearish .tf-dot {
+            background-color: var(--binance-red);
+            box-shadow: 0 0 6px var(--binance-red);
+        }
+
+        .tf-trend-item.consolidation {
+            color: var(--binance-yellow);
+            background: rgba(240, 185, 11, 0.12);
+            border-color: rgba(240, 185, 11, 0.3);
+        }
+        .tf-trend-item.consolidation .tf-dot {
+            background-color: var(--binance-yellow);
+            box-shadow: 0 0 6px var(--binance-yellow);
+        }
+
+        /* Toast Alert Container */
+        .alert-toast-container {
+            position: absolute;
+            top: 55px;
+            right: 20px;
+            z-index: 120;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+            max-width: 320px;
+        }
+
+        .alert-toast {
+            background: rgba(15, 20, 32, 0.95);
+            border: 1px solid var(--panel-border);
+            border-left: 4px solid var(--binance-yellow);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            font-size: 13px;
+            animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .alert-toast.long {
+            border-left-color: var(--binance-green);
+            background: linear-gradient(135deg, rgba(14, 203, 129, 0.15), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.short {
+            border-left-color: var(--binance-red);
+            background: linear-gradient(135deg, rgba(246, 70, 93, 0.15), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.tp {
+            border-left-color: #00d2ff;
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.18), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast.sl {
+            border-left-color: var(--binance-red);
+            background: linear-gradient(135deg, rgba(246, 70, 93, 0.2), rgba(15, 20, 32, 0.95));
+        }
+
+        .alert-toast-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .alert-toast-body {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .alert-toast-close {
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <!-- Live Header Stats -->
+    <header class="dashboard-header">
+        <div class="logo-section">
+            <div class="coin-icon">₿</div>
+            <div class="coin-name">
+                <div class="coin-title">BTCUSD <span>Margex Live</span></div>
+                <div class="coin-subtitle">Intervalo: 1 Minuto (1m)</div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Precio</span>
+                <span class="stat-value price" id="live_price">---.--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Cambio 24h</span>
+                <span class="stat-value" id="price_change">--.--%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Máx / Mín 24h</span>
+                <span class="stat-value" id="price_range">--- / ---</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Volumen 24h (USDT)</span>
+                <span class="stat-value" id="volume_24h">---.-- M</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        <!-- Chart Area -->
+        <div class="chart-wrapper">
+            <!-- Top-Right Alert Toast Container -->
+            <div class="alert-toast-container" id="toast_container"></div>
+
+            <!-- Top-Left Multi-Timeframe Trend Bar -->
+            <div class="tf-trend-bar" id="tf_trend_bar">
+                <button class="tf-trend-item interval-btn active" data-interval="1m"><span class="tf-dot"></span>1m</button>
+                <button class="tf-trend-item interval-btn" data-interval="5m"><span class="tf-dot"></span>5m</button>
+                <button class="tf-trend-item interval-btn" data-interval="15m"><span class="tf-dot"></span>15m</button>
+                <button class="tf-trend-item interval-btn" data-interval="30m"><span class="tf-dot"></span>30m</button>
+                <button class="tf-trend-item interval-btn" data-interval="1h"><span class="tf-dot"></span>1h</button>
+                <button class="tf-trend-item interval-btn" data-interval="4h"><span class="tf-dot"></span>4h</button>
+                <button class="tf-trend-item interval-btn" data-interval="1d"><span class="tf-dot"></span>1d</button>
+            </div>
+            <!-- Main Chart Container -->
+            <div id="main_chart_container">
+                <div id="tradingview_chart"></div>
+                <canvas id="vpvr_canvas"></canvas>
+            </div>
+
+            <!-- Oscilador Oracle Container -->
+            <div id="oscillator_container">
+                <div class="osc-header-overlay">
+                    <span class="osc-title">Oscilador Oracle</span>
+                    <span class="osc-badge neutral" id="osc_status_badge">Cargando</span>
+                    <span class="osc-metrics" id="osc_metrics_text">Oracle: 0.00 | Signal: 0.00 | Hist: 0.00</span>
+                </div>
+                <div id="oscillator_chart"></div>
+            </div>
+        </div>
+
+        <!-- Sidebar Panel -->
+        <aside class="control-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Temporalidad</h3>
+                <div class="btn-group grid-3">
+                    <button class="btn-option interval-btn active" data-interval="1m">1m</button>
+                    <button class="btn-option interval-btn" data-interval="5m">5m</button>
+                    <button class="btn-option interval-btn" data-interval="15m">15m</button>
+                    <button class="btn-option interval-btn" data-interval="30m">30m</button>
+                    <button class="btn-option interval-btn" data-interval="1h">1h</button>
+                    <button class="btn-option interval-btn" data-interval="4h">4h</button>
+                    <button class="btn-option interval-btn" data-interval="1d">1d</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Divergencias RSI</h3>
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #00d2ff;"></span>
+                        Marcadores en Gráfico
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_rsi_divergences" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Período RSI</span>
+                        <span id="label_rsi_period">14</span>
+                    </div>
+                    <input type="range" id="slider_rsi_period" class="range-slider" min="5" max="30" step="1" value="14">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Oscilador Sub-Panel</h3>
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #00d2ff;"></span>
+                        Ver Oscilador
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_oracle_osc" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Modo de Cálculo</span>
+                    </div>
+                    <div class="btn-group grid-3">
+                        <button class="btn-option osc-mode-btn active" data-mode="baseline5m">Apertura 5m</button>
+                        <button class="btn-option osc-mode-btn" data-mode="wavetrend">WaveTrend</button>
+                        <button class="btn-option osc-mode-btn" data-mode="rsi">RSI (14)</button>
+                    </div>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Suavizado Signal (EMA)</span>
+                        <span id="label_oracle_smooth">9</span>
+                    </div>
+                    <input type="range" id="slider_oracle_smooth" class="range-slider" min="3" max="21" step="1" value="9">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Indicadores</h3>
+                
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #FF0000;"></span>
+                        EMA 7 (Rojo)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ema7" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">
+                        <span class="indicator-dot" style="background-color: #00FF00;"></span>
+                        EMA 25 (Verde)
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle_ema25" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-section-title">Calibración Margex</h3>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>Ajuste de Precio ($ USD)</span>
+                        <span id="label_price_offset">0 $</span>
+                    </div>
+                    <input type="range" id="slider_price_offset" class="range-slider" min="-100" max="100" step="1" value="0">
+                </div>
+            </div>
+
+            <div class="conn-status">
+                <div class="status-pulse" id="connection_dot"></div>
+                <span id="connection_text">Conectando a Margex...</span>
+            </div>
+        </aside>
+    </div>
+
+    <!-- TradingView Lightweight Charts stand-alone production build -->
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+    <script>
+        // DOM Elements
+        const livePriceEl = document.getElementById('live_price');
+        const priceChangeEl = document.getElementById('price_change');
+        const priceRangeEl = document.getElementById('price_range');
+        const volume24hEl = document.getElementById('volume_24h');
+        const toggleEma7 = document.getElementById('toggle_ema7');
+        const toggleEma25 = document.getElementById('toggle_ema25');
+        const connectionDot = document.getElementById('connection_dot');
+        const connectionText = document.getElementById('connection_text');
+        const sliderPriceOffset = document.getElementById('slider_price_offset');
+        const labelPriceOffset = document.getElementById('label_price_offset');
+
+        // Global Chart variables
+        let chart;
+        let candleSeries;
+        let volumeSeries;
+        let ema7Series;
+        let ema25Series;
+        let ws;
+
+        // Oscilador Oracle Chart variables
+        let oscillatorChart;
+        let oracleHistSeries;
+        let oracleLineSeries;
+        let oracleSignalSeries;
+        let oracleMode = 'baseline5m';
+        let oracleSmooth = 9;
+        let isSyncingScale = false;
+
+        // Global data stores
+        let chartData = [];
+        let ema7Data = [];
+        let ema25Data = [];
+        let currentInterval = '1m';
+        // Canvas Setup
+        let canvas = null;
+        let ctx = null;
+
+        function initCanvas() {
+            canvas = document.getElementById('vpvr_canvas');
+            if (canvas) {
+                ctx = canvas.getContext('2d');
+                resizeCanvas();
+            }
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            if (ctx) ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            renderCanvasOverlay();
+        }
+
+        function initOscillatorChart() {
+            const oscDiv = document.getElementById('oscillator_chart');
+            if (!oscDiv) return;
+
+            oscillatorChart = LightweightCharts.createChart(oscDiv, {
+                layout: {
+                    background: { type: 'solid', color: '#08090d' },
+                    textColor: '#90a4ae',
+                    fontSize: 11,
+                    fontFamily: "'Outfit', sans-serif"
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.03)' }
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    scaleMargins: { top: 0.15, bottom: 0.15 },
+                    alignLabels: false,
+                },
+                timeScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    timeVisible: true,
+                    secondsVisible: false,
+                    barSpacing: 6,
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                    vertLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed },
+                    horzLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed }
+                }
+            });
+
+            oracleHistSeries = oscillatorChart.addHistogramSeries({
+                priceScaleId: 'right',
+                priceFormat: { type: 'volume' }
+            });
+
+            oracleLineSeries = oscillatorChart.addLineSeries({
+                color: '#00d2ff',
+                lineWidth: 2,
+                title: 'Oracle'
+            });
+
+            oracleSignalSeries = oscillatorChart.addLineSeries({
+                color: '#f0b90b',
+                lineWidth: 1.5,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                title: 'Signal'
+            });
+
+            // Level reference lines
+            oracleLineSeries.createPriceLine({ price: 200, color: '#f6465d', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: '+200' });
+            oracleLineSeries.createPriceLine({ price: 100, color: 'rgba(246, 70, 93, 0.5)', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: '+100' });
+            oracleLineSeries.createPriceLine({ price: 0, color: 'rgba(255, 255, 255, 0.25)', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid, title: '0' });
+            oracleLineSeries.createPriceLine({ price: -100, color: 'rgba(14, 203, 129, 0.5)', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: '-100' });
+            oracleLineSeries.createPriceLine({ price: -200, color: '#0ecb81', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: '-200' });
+
+            // Synchronize chart scroll and zoom
+            chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+                if (isSyncingScale || !range || !oscillatorChart) return;
+                isSyncingScale = true;
+                oscillatorChart.timeScale().setVisibleLogicalRange(range);
+                isSyncingScale = false;
+            });
+
+            oscillatorChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+                if (isSyncingScale || !range || !chart) return;
+                isSyncingScale = true;
+                chart.timeScale().setVisibleLogicalRange(range);
+                isSyncingScale = false;
+            });
+
+            const resizeObserverOsc = new ResizeObserver(entries => {
+                if (entries.length === 0 || !entries[0].contentRect) return;
+                const { width, height } = entries[0].contentRect;
+                oscillatorChart.resize(width, height);
+            });
+            resizeObserverOsc.observe(oscDiv);
+        }
+
+        // RSI Divergence & Oscillator variables
+        let rsiPeriod = 14;
+        let showRsiDivergences = true;
+        let lastNotifiedDivTime = null;
+
+        function calculateRSISeries(data, period = rsiPeriod) {
+            if (!data || data.length < period + 1) return { rsiArray: [], rsiMap: new Map() };
+            const rsiArray = [];
+            const rsiMap = new Map();
+
+            let gains = 0;
+            let losses = 0;
+
+            for (let i = 1; i <= period; i++) {
+                const change = data[i].close - data[i - 1].close;
+                if (change >= 0) gains += change;
+                else losses += Math.abs(change);
+            }
+
+            let avgGain = gains / period;
+            let avgLoss = losses / period;
+
+            let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+            let rsi = 100 - (100 / (1 + rs));
+            rsiArray.push({ time: data[period].time, value: rsi });
+            rsiMap.set(data[period].time, rsi);
+
+            for (let i = period + 1; i < data.length; i++) {
+                const change = data[i].close - data[i - 1].close;
+                const gain = change >= 0 ? change : 0;
+                const loss = change < 0 ? Math.abs(change) : 0;
+
+                avgGain = (avgGain * (period - 1) + gain) / period;
+                avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+                rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                rsi = 100 - (100 / (1 + rs));
+                rsiArray.push({ time: data[i].time, value: rsi });
+                rsiMap.set(data[i].time, rsi);
+            }
+
+            return { rsiArray, rsiMap };
+        }
+
+        function detectRSIDivergences(data, period = rsiPeriod, pivotLeft = 3, pivotRight = 2) {
+            if (!data || data.length < period + 15) return [];
+
+            const { rsiMap } = calculateRSISeries(data, period);
+            const pivotLows = [];
+            const pivotHighs = [];
+
+            for (let i = pivotLeft; i < data.length - pivotRight; i++) {
+                const cLow = data[i].low;
+                const cHigh = data[i].high;
+
+                let isLow = true;
+                for (let k = i - pivotLeft; k <= i + pivotRight; k++) {
+                    if (k !== i && data[k].low <= cLow) { isLow = false; break; }
+                }
+                if (isLow && rsiMap.has(data[i].time)) {
+                    pivotLows.push({ index: i, time: data[i].time, price: cLow, rsi: rsiMap.get(data[i].time) });
+                }
+
+                let isHigh = true;
+                for (let k = i - pivotLeft; k <= i + pivotRight; k++) {
+                    if (k !== i && data[k].high >= cHigh) { isHigh = false; break; }
+                }
+                if (isHigh && rsiMap.has(data[i].time)) {
+                    pivotHighs.push({ index: i, time: data[i].time, price: cHigh, rsi: rsiMap.get(data[i].time) });
+                }
+            }
+
+            const divergences = [];
+
+            // Bullish Divergences (Pivot Lows)
+            for (let i = 1; i < pivotLows.length; i++) {
+                const curr = pivotLows[i];
+                const prev = pivotLows[i - 1];
+
+                if (curr.index - prev.index >= 4 && curr.index - prev.index <= 45) {
+                    if (curr.price < prev.price && curr.rsi > prev.rsi) {
+                        divergences.push({ time: curr.time, type: 'bullish', subType: 'Regular', price: curr.price, rsi: curr.rsi });
+                    } else if (curr.price > prev.price && curr.rsi < prev.rsi) {
+                        divergences.push({ time: curr.time, type: 'bullish_hidden', subType: 'Oculta', price: curr.price, rsi: curr.rsi });
+                    }
+                }
+            }
+
+            // Bearish Divergences (Pivot Highs)
+            for (let i = 1; i < pivotHighs.length; i++) {
+                const curr = pivotHighs[i];
+                const prev = pivotHighs[i - 1];
+
+                if (curr.index - prev.index >= 4 && curr.index - prev.index <= 45) {
+                    if (curr.price > prev.price && curr.rsi < prev.rsi) {
+                        divergences.push({ time: curr.time, type: 'bearish', subType: 'Regular', price: curr.price, rsi: curr.rsi });
+                    } else if (curr.price < prev.price && curr.rsi > prev.rsi) {
+                        divergences.push({ time: curr.time, type: 'bearish_hidden', subType: 'Oculta', price: curr.price, rsi: curr.rsi });
+                    }
+                }
+            }
+
+            return divergences;
+        }
+
+        function updateRSIDivergenceMarkers() {
+            if (!candleSeries || !chartData || chartData.length === 0) return;
+
+            if (!showRsiDivergences) {
+                candleSeries.setMarkers([]);
+                return;
+            }
+
+            const divs = detectRSIDivergences(chartData, rsiPeriod);
+            const markers = [];
+
+            for (const d of divs) {
+                if (d.type === 'bullish') {
+                    markers.push({ time: d.time, position: 'belowBar', color: '#0ecb81', shape: 'arrowUp', text: 'BULL DIV' });
+                } else if (d.type === 'bullish_hidden') {
+                    markers.push({ time: d.time, position: 'belowBar', color: '#00d2ff', shape: 'circle', text: 'DIV + (Hidden)' });
+                } else if (d.type === 'bearish') {
+                    markers.push({ time: d.time, position: 'aboveBar', color: '#f6465d', shape: 'arrowDown', text: 'BEAR DIV' });
+                } else if (d.type === 'bearish_hidden') {
+                    markers.push({ time: d.time, position: 'aboveBar', color: '#ff9800', shape: 'circle', text: 'DIV - (Hidden)' });
+                }
+            }
+
+            candleSeries.setMarkers(markers);
+
+            if (divs.length > 0) {
+                const latestDiv = divs[divs.length - 1];
+                if (lastNotifiedDivTime !== latestDiv.time) {
+                    const isBull = latestDiv.type.startsWith('bullish');
+                    showToastAlert(
+                        isBull ? '🟢 DIVERGENCIA ALCISTA RSI' : '🔴 DIVERGENCIA BAJISTA RSI',
+                        `Divergencia RSI (${latestDiv.subType}) detectada en $${latestDiv.price.toFixed(2)}.`,
+                        isBull ? 'long' : 'short'
+                    );
+                    lastNotifiedDivTime = latestDiv.time;
+                }
+            }
+        }
+
+        function showToastAlert(title, message, type = 'long') {
+            const container = document.getElementById('toast_container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `alert-toast ${type}`;
+            toast.innerHTML = `
+                <div class="alert-toast-header">
+                    <span>${title}</span>
+                    <button class="alert-toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+                <div class="alert-toast-body">${message}</div>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast && toast.parentElement) toast.remove();
+            }, 6000);
+        }
+
+        function calculateOracleOscillator(data, mode = oracleMode, smooth = oracleSmooth) {
+            if (!data || data.length === 0) return { line: [], signal: [], hist: [] };
+
+            const line = [];
+            const rawVals = [];
+
+            if (mode === 'rsi') {
+                const { rsiArray } = calculateRSISeries(data, rsiPeriod);
+                const rsiMap = new Map(rsiArray.map(r => [r.time, r.value]));
+
+                for (let i = 0; i < data.length; i++) {
+                    const val = rsiMap.has(data[i].time) ? rsiMap.get(data[i].time) : 50;
+                    rawVals.push(val);
+                    line.push({ time: data[i].time, value: val });
+                }
+            } else if (mode === 'wavetrend') {
+                const ap = data.map(d => (d.high + d.low + d.close) / 3);
+                const esa = [];
+                const k10 = 2 / (10 + 1);
+                let prevEsa = ap[0];
+                esa.push(prevEsa);
+                for (let i = 1; i < ap.length; i++) {
+                    const v = ap[i] * k10 + prevEsa * (1 - k10);
+                    esa.push(v);
+                    prevEsa = v;
+                }
+
+                const dArr = [];
+                let prevD = Math.abs(ap[0] - esa[0]);
+                dArr.push(prevD);
+                for (let i = 1; i < ap.length; i++) {
+                    const diff = Math.abs(ap[i] - esa[i]);
+                    const v = diff * k10 + prevD * (1 - k10);
+                    dArr.push(v);
+                    prevD = v;
+                }
+
+                const ci = [];
+                for (let i = 0; i < ap.length; i++) {
+                    const denominator = dArr[i] === 0 ? 0.001 : dArr[i];
+                    ci.push((ap[i] - esa[i]) / (0.015 * denominator));
+                }
+
+                const k21 = 2 / (21 + 1);
+                let prevWt1 = ci[0];
+                rawVals.push(prevWt1);
+                line.push({ time: data[0].time, value: prevWt1 });
+
+                for (let i = 1; i < data.length; i++) {
+                    const wt1 = ci[i] * k21 + prevWt1 * (1 - k21);
+                    rawVals.push(wt1);
+                    line.push({ time: data[i].time, value: wt1 });
+                    prevWt1 = wt1;
+                }
+            } else {
+                // Baseline 5m mode (Oscillation distance relative to 5m candle open price)
+                for (let i = 0; i < data.length; i++) {
+                    const c = data[i];
+                    const fiveMinSec = Math.floor(c.time / 300) * 300;
+                    let open5m = c.open;
+                    
+                    for (let j = i; j >= 0; j--) {
+                        if (data[j].time <= fiveMinSec) {
+                            open5m = data[j].open;
+                            break;
+                        }
+                    }
+                    const val = c.close - open5m;
+                    rawVals.push(val);
+                    line.push({ time: c.time, value: val });
+                }
+            }
+
+            // Signal Line (EMA)
+            const signal = [];
+            const kSmooth = 2 / (smooth + 1);
+            let prevSig = rawVals[0];
+            signal.push({ time: data[0].time, value: prevSig });
+
+            for (let i = 1; i < data.length; i++) {
+                const sigVal = rawVals[i] * kSmooth + prevSig * (1 - kSmooth);
+                signal.push({ time: data[i].time, value: sigVal });
+                prevSig = sigVal;
+            }
+
+            // Histogram
+            const hist = [];
+            for (let i = 0; i < data.length; i++) {
+                const diff = mode === 'rsi' ? (line[i].value - 50) : (line[i].value - signal[i].value);
+                hist.push({
+                    time: data[i].time,
+                    value: diff,
+                    color: diff >= 0 ? '#0ecb81' : '#f6465d'
+                });
+            }
+
+            return { line, signal, hist };
+        }
+
+        function updateOscillatorData() {
+            if (!oscillatorChart || !chartData || chartData.length === 0) return;
+
+            const { line, signal, hist } = calculateOracleOscillator(chartData, oracleMode, oracleSmooth);
+
+            if (oracleLineSeries) oracleLineSeries.setData(line);
+            if (oracleSignalSeries) oracleSignalSeries.setData(signal);
+            if (oracleHistSeries) oracleHistSeries.setData(hist);
+
+            updateRSIDivergenceMarkers();
+
+            if (line.length > 0) {
+                const lastOsc = line[line.length - 1].value;
+                const lastSig = signal[signal.length - 1].value;
+                const lastHist = hist[hist.length - 1].value;
+
+                const oscText = document.getElementById('osc_metrics_text');
+                if (oscText) {
+                    oscText.innerText = `Oracle: ${lastOsc >= 0 ? '+' : ''}${lastOsc.toFixed(2)} | Signal: ${lastSig >= 0 ? '+' : ''}${lastSig.toFixed(2)} | Hist: ${lastHist >= 0 ? '+' : ''}${lastHist.toFixed(2)}`;
+                }
+
+                const oscBadge = document.getElementById('osc_status_badge');
+                if (oscBadge) {
+                    if (lastOsc > 0 && lastHist > 0) {
+                        oscBadge.className = "osc-badge bullish";
+                        oscBadge.innerText = "ALCISTA (BULLISH)";
+                    } else if (lastOsc < 0 && lastHist < 0) {
+                        oscBadge.className = "osc-badge bearish";
+                        oscBadge.innerText = "BAJISTA (BEARISH)";
+                    } else {
+                        oscBadge.className = "osc-badge neutral";
+                        oscBadge.innerText = "NEUTRAL / TRANSICIÓN";
+                    }
+                }
+            }
+        }
+
+        function renderCanvasOverlay() {
+            if (!canvas || !ctx || !candleSeries || !current5mOpenPrice) return;
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const upperPrice = current5mOpenPrice + 200;
+            const lowerPrice = current5mOpenPrice - 200;
+            const centerPrice = current5mOpenPrice;
+
+            const yUpper = candleSeries.priceToCoordinate(upperPrice);
+            const yLower = candleSeries.priceToCoordinate(lowerPrice);
+            const yCenter = candleSeries.priceToCoordinate(centerPrice);
+
+            const chartPaneWidth = width - 75;
+
+            ctx.save();
+            ctx.strokeStyle = '#00d2ff';
+            ctx.setLineDash([4, 4]);
+
+            // Línea +200
+            if (yUpper !== null && yUpper >= 0 && yUpper <= height) {
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(0, yUpper);
+                ctx.lineTo(chartPaneWidth, yUpper);
+                ctx.stroke();
+
+                ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                ctx.fillStyle = '#00d2ff';
+                ctx.fillText(`+200 ($${upperPrice.toFixed(1)})`, 16, yUpper - 5);
+            }
+
+            // Línea Central (0 / Apertura 5m, sin texto, 1px)
+            if (yCenter !== null && yCenter >= 0 && yCenter <= height) {
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, yCenter);
+                ctx.lineTo(chartPaneWidth, yCenter);
+                ctx.stroke();
+            }
+
+            // Línea -200
+            if (yLower !== null && yLower >= 0 && yLower <= height) {
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(0, yLower);
+                ctx.lineTo(chartPaneWidth, yLower);
+                ctx.stroke();
+
+                ctx.font = "bold 12px 'JetBrains Mono', monospace";
+                ctx.fillStyle = '#00d2ff';
+                ctx.fillText(`-200 ($${lowerPrice.toFixed(1)})`, 16, yLower + 15);
+            }
+
+            ctx.restore();
+        }
+
+        // Initialize Lightweight Chart
+        function initChart() {
+            const chartDiv = document.getElementById('tradingview_chart');
+            chart = LightweightCharts.createChart(chartDiv, {
+                layout: {
+                    background: { type: 'solid', color: '#0c0d12' },
+                    textColor: '#90a4ae',
+                    fontSize: 12,
+                    fontFamily: "'Outfit', sans-serif"
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.03)' }
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    scaleMargins: {
+                        top: 0,
+                        bottom: 0
+                    },
+                    alignLabels: false,
+                    entireTextOnly: false
+                },
+                timeScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    timeVisible: true,
+                    secondsVisible: false,
+                    barSpacing: 6,
+                    tickMarkFormatter: (time, tickMarkType, locale) => {
+                        const date = new Date(time * 1000);
+                        const options = { timeZone: 'America/Argentina/Buenos_Aires' };
+                        if (tickMarkType === 0) return date.toLocaleDateString('es-AR', { ...options, year: 'numeric' });
+                        if (tickMarkType === 1) return date.toLocaleDateString('es-AR', { ...options, month: 'short' });
+                        if (tickMarkType === 2) return date.toLocaleDateString('es-AR', { ...options, day: 'numeric' });
+                        if (tickMarkType === 3) return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', hour12: false });
+                        if (tickMarkType === 4) return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                        return null;
+                    }
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                    vertLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed },
+                    horzLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed }
+                },
+                localization: {
+                    locale: 'es-AR',
+                    timeFormatter: (timestamp) => {
+                        const date = new Date(timestamp * 1000);
+                        const isIntraday = currentInterval !== '1d';
+                        const options = { timeZone: 'America/Argentina/Buenos_Aires' };
+                        if (isIntraday) {
+                            return date.toLocaleTimeString('es-AR', { ...options, hour: '2-digit', minute: '2-digit' });
+                        } else {
+                            return date.toLocaleDateString('es-AR', { ...options, year: 'numeric', month: '2-digit', day: '2-digit' });
+                        }
+                    }
+                }
+            });
+
+            // Add candlestick series
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#0ecb81',
+                downColor: '#f6465d',
+                borderVisible: false,
+                wickUpColor: '#0ecb81',
+                wickDownColor: '#f6465d',
+                autoscaleInfoProvider: () => {
+                    if (current5mOpenPrice && current5mOpenPrice > 0) {
+                        return {
+                            priceRange: {
+                                minValue: current5mOpenPrice - 300,
+                                maxValue: current5mOpenPrice + 300,
+                            },
+                            margins: {
+                                above: 0,
+                                below: 0,
+                            },
+                        };
+                    }
+                    return null;
+                }
+            });
+
+
+
+            // Add EMA series
+            ema7Series = chart.addLineSeries({
+                color: '#FF0000',
+                lineWidth: 1.5,
+                priceLineVisible: false,
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => null
+            });
+
+            ema25Series = chart.addLineSeries({
+                color: '#00FF00',
+                lineWidth: 1.5,
+                priceLineVisible: false,
+                lastValueVisible: false,
+                autoscaleInfoProvider: () => null
+            });
+
+            // Subscribe to visible range changes to recalculate overlay
+            chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+                requestAnimationFrame(renderCanvasOverlay);
+            });
+
+            // Handle Resize
+            const resizeObserver = new ResizeObserver(entries => {
+                if (entries.length === 0 || !entries[0].contentRect) return;
+                const { width, height } = entries[0].contentRect;
+                chart.resize(width, height);
+                resizeCanvas();
+            });
+            resizeObserver.observe(chartDiv);
+            resizeCanvas();
+        }
+
+        // Calculate EMA
+        function calculateEMA(data, length) {
+            const ema = [];
+            const k = 2 / (length + 1);
+            let prevEma = data[0].close;
+            ema.push({ time: data[0].time, value: prevEma });
+
+            for (let i = 1; i < data.length; i++) {
+                const val = data[i].close * k + prevEma * (1 - k);
+                ema.push({ time: data[i].time, value: val });
+                prevEma = val;
+            }
+            return ema;
+        }
+
+        // Margex Data Fetching & Stream Integration
+        const MARGEX_INTERVAL_MAP = {
+            '1m': '1M',
+            '5m': '5M',
+            '15m': '15M',
+            '30m': '30M',
+            '1h': '60M',
+            '4h': '4H',
+            '1d': '1D'
+        };
+
+        const BYBIT_INTERVAL_MAP = {
+            '1m': '1',
+            '5m': '5',
+            '15m': '15',
+            '30m': '30',
+            '1h': '60',
+            '4h': '240',
+            '1d': 'D'
+        };
+
+        let pollingTimer = null;
+        let priceOffset = 0;
+
+        function normalizeKlineData(raw) {
+            let items = Array.isArray(raw) ? raw : (raw.data || raw.result || raw.klines || []);
+            if (!Array.isArray(items)) return [];
+
+            const parsed = items.map(d => {
+                if (Array.isArray(d)) {
+                    const rawTime = d[0];
+                    const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    return {
+                        time: timeSec,
+                        open: parseFloat(d[1]),
+                        high: parseFloat(d[2]),
+                        low: parseFloat(d[3]),
+                        close: parseFloat(d[4]),
+                        volume: parseFloat(d[5] || 0)
+                    };
+                } else if (typeof d === 'object' && d !== null) {
+                    const rawTime = d.time || d.timestamp || d.t || d.openTime;
+                    const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    return {
+                        time: timeSec,
+                        open: parseFloat(d.open || d.o),
+                        high: parseFloat(d.high || d.h),
+                        low: parseFloat(d.low || d.l),
+                        close: parseFloat(d.close || d.c),
+                        volume: parseFloat(d.volume || d.vol || d.v || 0)
+                    };
+                }
+                return null;
+            }).filter(d => d !== null && !isNaN(d.time) && !isNaN(d.close))
+              .sort((a, b) => a.time - b.time);
+
+            const unique = [];
+            let lastTime = null;
+            for (const candle of parsed) {
+                if (candle.time !== lastTime) {
+                    unique.push(candle);
+                    lastTime = candle.time;
+                }
+            }
+            return unique;
+        }
+
+        async function fetchMargexData() {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
+                const margexUrl = `https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=1000`;
+                
+                let klinesData = [];
+                try {
+                    const klinesRes = await fetch(margexUrl);
+                    if (klinesRes.ok) {
+                        const text = await klinesRes.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            klinesData = normalizeKlineData(JSON.parse(text));
+                        }
+                    }
+                } catch (fetchErr) {
+                    console.warn("Margex direct fetch fallback: ", fetchErr);
+                }
+
+                if (klinesData.length === 0) {
+                    const fallbackUrls = [
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=1000`,
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`,
+                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`
+                    ];
+
+                    for (const fbUrl of fallbackUrls) {
+                        try {
+                            const fbRes = await fetch(fbUrl);
+                            if (fbRes.ok) {
+                                const text = await fbRes.text();
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    klinesData = normalizeKlineData(JSON.parse(text));
+                                    if (klinesData.length > 0) break;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+
+                if (klinesData.length === 0) {
+                    throw new Error("No data received from Margex data sources");
+                }
+
+                if (priceOffset !== 0) {
+                    klinesData = klinesData.map(c => ({
+                        ...c,
+                        open: c.open + priceOffset,
+                        high: c.high + priceOffset,
+                        low: c.low + priceOffset,
+                        close: c.close + priceOffset
+                    }));
+                }
+
+                chartData = klinesData;
+                ema7Data = calculateEMA(chartData, 7);
+                ema25Data = calculateEMA(chartData, 25);
+
+                candleSeries.setData(chartData);
+                if (toggleEma7 && toggleEma7.checked) ema7Series.setData(ema7Data);
+                if (toggleEma25 && toggleEma25.checked) ema25Series.setData(ema25Data);
+
+                update5mOpenAndLines();
+                updateOscillatorData();
+
+
+
+                if (chartData.length > 0) {
+                    const latest = chartData[chartData.length - 1];
+                    const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                    const changePercent = ((latest.close - first24h.open) / first24h.open) * 100;
+                    
+                    let high24h = -Infinity;
+                    let low24h = Infinity;
+                    let vol24h = 0;
+                    const slice24h = chartData.slice(-1440);
+                    for (const c of slice24h) {
+                        if (c.high > high24h) high24h = c.high;
+                        if (c.low < low24h) low24h = c.low;
+                        vol24h += c.volume;
+                    }
+
+                    updateHeaderStats({
+                        c: latest.close,
+                        P: changePercent,
+                        h: high24h,
+                        l: low24h,
+                        q: vol24h * latest.close
+                    });
+                }
+
+                connectMargexStream();
+
+            } catch (err) {
+                console.error("Error fetching Margex data: ", err);
+                if (connectionText) connectionText.innerText = "Error cargando datos de Margex.";
+                if (connectionDot) {
+                    connectionDot.style.backgroundColor = "var(--binance-red)";
+                    connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
+                }
+            }
+        }
+
+        function connectMargexStream() {
+            if (ws) {
+                try { ws.onclose = null; ws.close(); } catch(e) {}
+                ws = null;
+            }
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+
+            let wsAttempted = false;
+            try {
+                ws = new WebSocket(`wss://api.margex.com/v1/ws`);
+
+                ws.onopen = () => {
+                    wsAttempted = true;
+                    if (connectionText) connectionText.innerText = "Margex Live WS Activo";
+                    if (connectionDot) {
+                        connectionDot.style.backgroundColor = "var(--binance-green)";
+                        connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+                    }
+
+                    const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                    ws.send(JSON.stringify({
+                        op: "subscribe",
+                        args: [`klines.${intervalParam}.BTCUSD`, `ticker.BTCUSD`]
+                    }));
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.topic && msg.topic.includes('kline') && msg.data) {
+                            const kData = normalizeKlineData([msg.data])[0];
+                            if (kData) updateRealtimeKlineFromCandle(kData);
+                        } else if (msg.topic && msg.topic.includes('ticker') && msg.data) {
+                            updateHeaderStats(msg.data);
+                        }
+                    } catch(e) {}
+                };
+
+                ws.onerror = () => { startPollingFallback(); };
+                ws.onclose = () => {
+                    if (!wsAttempted) {
+                        startPollingFallback();
+                    } else {
+                        if (connectionText) connectionText.innerText = "Reconectando a Margex...";
+                        if (connectionDot) {
+                            connectionDot.style.backgroundColor = "var(--binance-yellow)";
+                            connectionDot.style.boxShadow = "0 0 8px var(--binance-yellow)";
+                        }
+                        setTimeout(connectMargexStream, 5000);
+                    }
+                };
+            } catch (e) {
+                startPollingFallback();
+            }
+        }
+
+        function startPollingFallback() {
+            if (connectionText) connectionText.innerText = "Margex Live (HTTP Polling)";
+            if (connectionDot) {
+                connectionDot.style.backgroundColor = "var(--binance-green)";
+                connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
+            }
+
+            if (!pollingTimer) {
+                pollingTimer = setInterval(async () => {
+                    await pollMargexLatest();
+                }, 3000);
+            }
+        }
+
+        async function pollMargexLatest() {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
+                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
+                let candles = [];
+                try {
+                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=5`);
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            candles = normalizeKlineData(JSON.parse(text));
+                        }
+                    }
+                } catch(e) {}
+
+                if (candles.length === 0) {
+                    const fallbackUrls = [
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=5`,
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`,
+                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`
+                    ];
+                    for (const fbUrl of fallbackUrls) {
+                        try {
+                            const fbRes = await fetch(fbUrl);
+                            if (fbRes.ok) {
+                                const text = await fbRes.text();
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    candles = normalizeKlineData(JSON.parse(text));
+                                    if (candles.length > 0) break;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+
+                if (candles.length > 0) {
+                    let latest = candles[candles.length - 1];
+                    if (priceOffset !== 0) {
+                        latest = {
+                            ...latest,
+                            open: latest.open + priceOffset,
+                            high: latest.high + priceOffset,
+                            low: latest.low + priceOffset,
+                            close: latest.close + priceOffset
+                        };
+                    }
+                    updateRealtimeKlineFromCandle(latest);
+
+                    if (chartData.length > 0) {
+                        const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                        const changePercent = ((latest.close - first24h.open) / first24h.open) * 100;
+                        
+                        let high24h = latest.high;
+                        let low24h = latest.low;
+                        const slice24h = chartData.slice(-100);
+                        for (const c of slice24h) {
+                            if (c.high > high24h) high24h = c.high;
+                            if (c.low < low24h) low24h = c.low;
+                        }
+
+                        updateHeaderStats({
+                            c: latest.close,
+                            P: changePercent,
+                            h: high24h,
+                            l: low24h,
+                            q: (slice24h.reduce((acc, curr) => acc + curr.volume, 0)) * latest.close
+                        });
+                    }
+                }
+            } catch(e) {}
+        }
+
+        let lastPrice = 0;
+        let current5mOpenPrice = null;
+        let lineUpper200 = null;
+        let lineLower200 = null;
+        let lineCenter = null;
+
+        function get5mOpenPrice(data) {
+            if (!data || data.length === 0) return null;
+            const latest = data[data.length - 1];
+            const fiveMinStartSec = Math.floor(latest.time / 300) * 300;
+
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (data[i].time === fiveMinStartSec) {
+                    return data[i].open;
+                }
+            }
+
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (data[i].time <= fiveMinStartSec) {
+                    return data[i].open;
+                }
+            }
+
+            return latest.open;
+        }
+
+        function update5mOpenAndLines() {
+            if (!chartData || chartData.length === 0) return;
+            
+            const new5mOpen = get5mOpenPrice(chartData);
+            if (!new5mOpen || isNaN(new5mOpen)) return;
+            current5mOpenPrice = new5mOpen;
+
+            const upperPrice = current5mOpenPrice + 200;
+            const lowerPrice = current5mOpenPrice - 200;
+            const centerPrice = current5mOpenPrice;
+
+            if (!lineUpper200) {
+                lineUpper200 = candleSeries.createPriceLine({
+                    price: upperPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: true,
+                    title: '+200',
+                });
+            } else {
+                lineUpper200.applyOptions({ price: upperPrice });
+            }
+
+            if (!lineCenter) {
+                lineCenter = candleSeries.createPriceLine({
+                    price: centerPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: false,
+                    title: '',
+                });
+            } else {
+                lineCenter.applyOptions({ price: centerPrice });
+            }
+
+            if (!lineLower200) {
+                lineLower200 = candleSeries.createPriceLine({
+                    price: lowerPrice,
+                    color: '#00d2ff',
+                    lineWidth: 1.5,
+                    lineStyle: LightweightCharts.LineStyle.Dotted,
+                    axisLabelVisible: true,
+                    title: '-200',
+                });
+            } else {
+                lineLower200.applyOptions({ price: lowerPrice });
+            }
+
+            if (chart) {
+                chart.priceScale('right').applyOptions({});
+                renderCanvasOverlay();
+            }
+        }
+
+        function updateHeaderStats(tick) {
+            if (!livePriceEl) return;
+            const price = parseFloat(tick.c);
+            livePriceEl.innerText = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            if (lastPrice !== 0 && price !== lastPrice) {
+                if (price > lastPrice) {
+                    livePriceEl.className = "stat-value price up";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(14, 203, 129, 0.4)";
+                } else {
+                    livePriceEl.className = "stat-value price down";
+                    livePriceEl.style.textShadow = "0 0 10px rgba(246, 70, 93, 0.4)";
+                }
+            }
+            lastPrice = price;
+
+            update5mOpenAndLines();
+
+            setTimeout(() => {
+                if (livePriceEl) livePriceEl.style.textShadow = "none";
+            }, 200);
+
+            if (priceChangeEl) {
+                const changePercent = parseFloat(tick.P);
+                priceChangeEl.innerText = (changePercent >= 0 ? "+" : "") + changePercent.toFixed(2) + "%";
+                priceChangeEl.className = "stat-value " + (changePercent >= 0 ? "up" : "down");
+            }
+
+            if (priceRangeEl) {
+                const high = parseFloat(tick.h).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                const low = parseFloat(tick.l).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                priceRangeEl.innerText = `${high} / ${low}`;
+            }
+
+            if (volume24hEl) {
+                const quoteVolume = parseFloat(tick.q) / 1000000;
+                volume24hEl.innerText = quoteVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " M";
+            }
+        }
+
+        function updateRealtimeKlineFromCandle(candle) {
+            const time = candle.time;
+            const lastIdx = chartData.length - 1;
+
+            if (lastIdx >= 0 && chartData[lastIdx].time === time) {
+                chartData[lastIdx] = candle;
+
+                const k7 = 2 / (7 + 1);
+                const prevEma7 = ema7Data[lastIdx - 1] ? ema7Data[lastIdx - 1].value : candle.close;
+                ema7Data[lastIdx] = { time: time, value: candle.close * k7 + prevEma7 * (1 - k7) };
+
+                const k25 = 2 / (25 + 1);
+                const prevEma25 = ema25Data[lastIdx - 1] ? ema25Data[lastIdx - 1].value : candle.close;
+                ema25Data[lastIdx] = { time: time, value: candle.close * k25 + prevEma25 * (1 - k25) };
+            } else if (lastIdx >= 0 && time > chartData[lastIdx].time) {
+                chartData.push(candle);
+
+                const k7 = 2 / (7 + 1);
+                const prevEma7 = ema7Data[lastIdx].value;
+                ema7Data.push({ time: time, value: candle.close * k7 + prevEma7 * (1 - k7) });
+
+                const k25 = 2 / (25 + 1);
+                const prevEma25 = ema25Data[lastIdx].value;
+                ema25Data.push({ time: time, value: candle.close * k25 + prevEma25 * (1 - k25) });
+
+                if (chartData.length > 1200) {
+                    chartData.shift();
+                    ema7Data.shift();
+                    ema25Data.shift();
+                }
+            }
+
+            if (candleSeries) candleSeries.update(candle);
+
+            if (toggleEma7 && toggleEma7.checked && ema7Data.length > 0) {
+                ema7Series.update(ema7Data[ema7Data.length - 1]);
+            }
+            if (toggleEma25 && toggleEma25.checked && ema25Data.length > 0) {
+                ema25Series.update(ema25Data[ema25Data.length - 1]);
+            }
+
+            update5mOpenAndLines();
+            updateOscillatorData();
+        }
+
+        // Toggle Switch & Slider Listeners
+        if (toggleEma7) {
+            toggleEma7.addEventListener('change', () => {
+                if (toggleEma7.checked) {
+                    ema7Series.setData(ema7Data);
+                } else {
+                    ema7Series.setData([]);
+                }
+            });
+        }
+
+        if (toggleEma25) {
+            toggleEma25.addEventListener('change', () => {
+                if (toggleEma25.checked) {
+                    ema25Series.setData(ema25Data);
+                } else {
+                    ema25Series.setData([]);
+                }
+            });
+        }
+
+        if (sliderPriceOffset) {
+            sliderPriceOffset.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                const diff = val - priceOffset;
+                priceOffset = val;
+                if (labelPriceOffset) labelPriceOffset.innerText = (priceOffset > 0 ? "+" : "") + priceOffset + " $";
+
+                if (diff !== 0 && chartData.length > 0) {
+                    chartData = chartData.map(c => ({
+                        ...c,
+                        open: c.open + diff,
+                        high: c.high + diff,
+                        low: c.low + diff,
+                        close: c.close + diff
+                    }));
+                    ema7Data = calculateEMA(chartData, 7);
+                    ema25Data = calculateEMA(chartData, 25);
+
+                    candleSeries.setData(chartData);
+                    if (toggleEma7.checked) ema7Series.setData(ema7Data);
+                    if (toggleEma25.checked) ema25Series.setData(ema25Data);
+
+                    if (chartData.length > 0) {
+                        const latest = chartData[chartData.length - 1];
+                        const first24h = chartData[Math.max(0, chartData.length - 1440)] || chartData[0];
+                        updateHeaderStats({
+                            c: latest.close,
+                            P: ((latest.close - first24h.open) / first24h.open) * 100,
+                            h: Math.max(...chartData.slice(-100).map(c => c.high)),
+                            l: Math.min(...chartData.slice(-100).map(c => c.low)),
+                            q: chartData.slice(-100).reduce((acc, curr) => acc + curr.volume, 0) * latest.close
+                        });
+                    }
+                    updateOscillatorData();
+                }
+            });
+        }
+
+        // RSI Divergence Sidebar Controls
+        const toggleRsiDiv = document.getElementById('toggle_rsi_divergences');
+        if (toggleRsiDiv) {
+            toggleRsiDiv.addEventListener('change', () => {
+                showRsiDivergences = toggleRsiDiv.checked;
+                updateRSIDivergenceMarkers();
+            });
+        }
+
+        const sliderRsiPeriod = document.getElementById('slider_rsi_period');
+        const labelRsiPeriod = document.getElementById('label_rsi_period');
+        if (sliderRsiPeriod) {
+            sliderRsiPeriod.addEventListener('input', (e) => {
+                rsiPeriod = parseInt(e.target.value);
+                if (labelRsiPeriod) labelRsiPeriod.innerText = rsiPeriod;
+                updateOscillatorData();
+            });
+        }
+
+        // Oscilador Oracle Sidebar Controls
+        const toggleOracleOsc = document.getElementById('toggle_oracle_osc');
+        if (toggleOracleOsc) {
+            toggleOracleOsc.addEventListener('change', () => {
+                const oscContainer = document.getElementById('oscillator_container');
+                const mainContainer = document.getElementById('main_chart_container');
+                if (toggleOracleOsc.checked) {
+                    if (oscContainer) oscContainer.classList.remove('hidden');
+                    if (mainContainer) mainContainer.style.height = '68%';
+                } else {
+                    if (oscContainer) oscContainer.classList.add('hidden');
+                    if (mainContainer) mainContainer.style.height = '100%';
+                }
+                setTimeout(() => {
+                    const mainDiv = document.getElementById('tradingview_chart');
+                    if (chart && mainDiv) chart.resize(mainDiv.clientWidth, mainDiv.clientHeight);
+                    const oscDiv = document.getElementById('oscillator_chart');
+                    if (oscillatorChart && oscDiv) oscillatorChart.resize(oscDiv.clientWidth, oscDiv.clientHeight);
+                    resizeCanvas();
+                }, 100);
+            });
+        }
+
+        document.querySelectorAll('.osc-mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.osc-mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                oracleMode = btn.getAttribute('data-mode') || 'baseline5m';
+                updateOscillatorData();
+            });
+        });
+
+        const sliderOracleSmooth = document.getElementById('slider_oracle_smooth');
+        const labelOracleSmooth = document.getElementById('label_oracle_smooth');
+        if (sliderOracleSmooth) {
+            sliderOracleSmooth.addEventListener('input', (e) => {
+                oracleSmooth = parseInt(e.target.value);
+                if (labelOracleSmooth) labelOracleSmooth.innerText = oracleSmooth;
+                updateOscillatorData();
+            });
+        }
+
+        // Change candle timeframe
+        function changeInterval(newInterval) {
+            if (currentInterval === newInterval) return;
+            currentInterval = newInterval;
+
+            document.querySelectorAll('.interval-btn').forEach(btn => {
+                if (btn.getAttribute('data-interval') === newInterval) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const intervalNames = {
+                '1m': '1 Minuto (1m)',
+                '5m': '5 Minutos (5m)',
+                '15m': '15 Minutos (15m)',
+                '30m': '30 Minutos (30m)',
+                '1h': '1 Hora (1h)',
+                '4h': '4 Horas (4h)',
+                '1d': '1 Día (1d)'
+            };
+            const subtitleEl = document.querySelector('.coin-subtitle');
+            if (subtitleEl) subtitleEl.innerText = `Intervalo: ${intervalNames[newInterval]}`;
+
+            chartData = [];
+            ema7Data = [];
+            ema25Data = [];
+
+            candleSeries.setData([]);
+            ema7Series.setData([]);
+            ema25Series.setData([]);
+
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+
+            if (ws) {
+                try { ws.onclose = null; ws.close(); } catch(e) {}
+                ws = null;
+            }
+
+            fetchMargexData();
+        }
+
+        document.querySelectorAll('.interval-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const newInterval = e.target.getAttribute('data-interval');
+                changeInterval(newInterval);
+            });
+        });
+
+        // Evaluate timeframe trend status
+        async function evaluateTimeframeTrend(interval) {
+            try {
+                const intervalParam = MARGEX_INTERVAL_MAP[interval] || interval;
+                let klines = [];
+                try {
+                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=50`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        klines = normalizeKlineData(json);
+                    }
+                } catch(e) {}
+
+                if (klines.length === 0) {
+                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=50`);
+                    if (fbRes.ok) {
+                        const json = await fbRes.json();
+                        klines = normalizeKlineData(json);
+                    }
+                }
+
+                if (!Array.isArray(klines) || klines.length < 25) return 'consolidation';
+
+                const closes = klines.map(k => k.close);
+                const highs = klines.map(k => k.high);
+                const lows = klines.map(k => k.low);
+
+                function getEMA(data, length) {
+                    const k = 2 / (length + 1);
+                    let ema = data[0];
+                    for (let i = 1; i < data.length; i++) {
+                        ema = data[i] * k + ema * (1 - k);
+                    }
+                    return ema;
+                }
+
+                const ema7 = getEMA(closes, 7);
+                const ema25 = getEMA(closes, 25);
+
+                let totalRange = 0;
+                const count = Math.min(14, klines.length);
+                for (let i = klines.length - count; i < klines.length; i++) {
+                    totalRange += (highs[i] - lows[i]);
+                }
+                const avgRange = totalRange / count;
+
+                const diff = ema7 - ema25;
+                const threshold = avgRange * 0.20;
+
+                if (Math.abs(diff) < threshold) {
+                    return 'consolidation';
+                } else if (diff > 0) {
+                    return 'bullish';
+                } else {
+                    return 'bearish';
+                }
+            } catch (e) {
+                return 'consolidation';
+            }
+        }
+
+        async function updateAllTimeframeTrends() {
+            const intervals = ['1m', '5m', '15m', '30m', '1h', '4h', '1d'];
+            const results = await Promise.all(intervals.map(tf => evaluateTimeframeTrend(tf)));
+            
+            intervals.forEach((tf, index) => {
+                const status = results[index];
+                const btn = document.querySelector(`.tf-trend-item[data-interval="${tf}"]`);
+                if (btn) {
+                    btn.classList.remove('bullish', 'bearish', 'consolidation');
+                    btn.classList.add(status);
+                }
+            });
+        }
+
+        // Initialize script
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            initOscillatorChart();
+            initCanvas();
+            fetchMargexData();
+            updateAllTimeframeTrends();
+            setInterval(updateAllTimeframeTrends, 20000);
+        });
+    </script>
+</body>
+</html>
