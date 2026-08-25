@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTC/USD Margex Trading Dashboard with VPVR</title>
+    <title>BTC/USDT Binance Trading Dashboard with VPVR</title>
     <!-- Google Fonts for premium trading look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -627,7 +627,7 @@
         <div class="logo-section">
             <div class="coin-icon">₿</div>
             <div class="coin-name">
-                <div class="coin-title">BTCUSD <span>Margex Live</span></div>
+                <div class="coin-title">BTCUSDT <span>Binance Live</span></div>
                 <div class="coin-subtitle">Intervalo: 1 Minuto (1m)</div>
             </div>
         </div>
@@ -783,7 +783,7 @@
             </div>
 
             <div class="sidebar-section">
-                <h3 class="sidebar-section-title">Calibración Margex</h3>
+                <h3 class="sidebar-section-title">Calibración Binance</h3>
                 <div class="slider-container">
                     <div class="slider-header">
                         <span>Ajuste de Precio ($ USD)</span>
@@ -795,7 +795,7 @@
 
             <div class="conn-status">
                 <div class="status-pulse" id="connection_dot"></div>
-                <span id="connection_text">Conectando a Margex...</span>
+                <span id="connection_text">Conectando a Binance...</span>
             </div>
         </aside>
     </div>
@@ -1241,63 +1241,9 @@
         }
 
         function renderCanvasOverlay() {
-            if (!canvas || !ctx || !candleSeries || !current5mOpenPrice) return;
+            if (!canvas || !ctx) return;
             const rect = canvas.getBoundingClientRect();
-            const width = rect.width;
-            const height = rect.height;
-
-            ctx.clearRect(0, 0, width, height);
-
-            const upperPrice = current5mOpenPrice + 200;
-            const lowerPrice = current5mOpenPrice - 200;
-            const centerPrice = current5mOpenPrice;
-
-            const yUpper = candleSeries.priceToCoordinate(upperPrice);
-            const yLower = candleSeries.priceToCoordinate(lowerPrice);
-            const yCenter = candleSeries.priceToCoordinate(centerPrice);
-
-            const chartPaneWidth = width - 75;
-
-            ctx.save();
-            ctx.strokeStyle = '#00d2ff';
-            ctx.setLineDash([4, 4]);
-
-            // Línea +200
-            if (yUpper !== null && yUpper >= 0 && yUpper <= height) {
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(0, yUpper);
-                ctx.lineTo(chartPaneWidth, yUpper);
-                ctx.stroke();
-
-                ctx.font = "bold 12px 'JetBrains Mono', monospace";
-                ctx.fillStyle = '#00d2ff';
-                ctx.fillText(`+200 ($${upperPrice.toFixed(1)})`, 16, yUpper - 5);
-            }
-
-            // Línea Central (0 / Apertura 5m, sin texto, 1px)
-            if (yCenter !== null && yCenter >= 0 && yCenter <= height) {
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(0, yCenter);
-                ctx.lineTo(chartPaneWidth, yCenter);
-                ctx.stroke();
-            }
-
-            // Línea -200
-            if (yLower !== null && yLower >= 0 && yLower <= height) {
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(0, yLower);
-                ctx.lineTo(chartPaneWidth, yLower);
-                ctx.stroke();
-
-                ctx.font = "bold 12px 'JetBrains Mono', monospace";
-                ctx.fillStyle = '#00d2ff';
-                ctx.fillText(`-200 ($${lowerPrice.toFixed(1)})`, 16, yLower + 15);
-            }
-
-            ctx.restore();
+            ctx.clearRect(0, 0, rect.width, rect.height);
         }
 
         // Initialize Lightweight Chart
@@ -1365,22 +1311,7 @@
                 downColor: '#f6465d',
                 borderVisible: false,
                 wickUpColor: '#0ecb81',
-                wickDownColor: '#f6465d',
-                autoscaleInfoProvider: () => {
-                    if (current5mOpenPrice && current5mOpenPrice > 0) {
-                        return {
-                            priceRange: {
-                                minValue: current5mOpenPrice - 300,
-                                maxValue: current5mOpenPrice + 300,
-                            },
-                            margins: {
-                                above: 0,
-                                below: 0,
-                            },
-                        };
-                    }
-                    return null;
-                }
+                wickDownColor: '#f6465d'
             });
 
 
@@ -1433,15 +1364,15 @@
             return ema;
         }
 
-        // Margex Data Fetching & Stream Integration
-        const MARGEX_INTERVAL_MAP = {
-            '1m': '1M',
-            '5m': '5M',
-            '15m': '15M',
-            '30m': '30M',
-            '1h': '60M',
-            '4h': '4H',
-            '1d': '1D'
+        // Binance.com Data Fetching & Stream Integration (BTC_USDT)
+        const BINANCE_INTERVAL_MAP = {
+            '1m': '1m',
+            '5m': '5m',
+            '15m': '15m',
+            '30m': '30m',
+            '1h': '1h',
+            '4h': '4h',
+            '1d': '1d'
         };
 
         const BYBIT_INTERVAL_MAP = {
@@ -1476,13 +1407,14 @@
                 } else if (typeof d === 'object' && d !== null) {
                     const rawTime = d.time || d.timestamp || d.t || d.openTime;
                     const timeSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+                    const candleObj = d.k || d;
                     return {
                         time: timeSec,
-                        open: parseFloat(d.open || d.o),
-                        high: parseFloat(d.high || d.h),
-                        low: parseFloat(d.low || d.l),
-                        close: parseFloat(d.close || d.c),
-                        volume: parseFloat(d.volume || d.vol || d.v || 0)
+                        open: parseFloat(candleObj.open || candleObj.o),
+                        high: parseFloat(candleObj.high || candleObj.h),
+                        low: parseFloat(candleObj.low || candleObj.l),
+                        close: parseFloat(candleObj.close || candleObj.c),
+                        volume: parseFloat(candleObj.volume || candleObj.vol || candleObj.v || 0)
                     };
                 }
                 return null;
@@ -1500,48 +1432,33 @@
             return unique;
         }
 
-        async function fetchMargexData() {
+        async function fetchBinanceData() {
             try {
-                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
-                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
-                const margexUrl = `https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=1000`;
+                const interval = BINANCE_INTERVAL_MAP[currentInterval] || currentInterval;
+                const urls = [
+                    `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=1000`,
+                    `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${interval}&limit=1000`,
+                    `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${BYBIT_INTERVAL_MAP[currentInterval] || '1'}&limit=1000`
+                ];
                 
                 let klinesData = [];
-                try {
-                    const klinesRes = await fetch(margexUrl);
-                    if (klinesRes.ok) {
-                        const text = await klinesRes.text();
-                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-                            klinesData = normalizeKlineData(JSON.parse(text));
-                        }
-                    }
-                } catch (fetchErr) {
-                    console.warn("Margex direct fetch fallback: ", fetchErr);
-                }
-
-                if (klinesData.length === 0) {
-                    const fallbackUrls = [
-                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=1000`,
-                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`,
-                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`
-                    ];
-
-                    for (const fbUrl of fallbackUrls) {
-                        try {
-                            const fbRes = await fetch(fbUrl);
-                            if (fbRes.ok) {
-                                const text = await fbRes.text();
-                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-                                    klinesData = normalizeKlineData(JSON.parse(text));
-                                    if (klinesData.length > 0) break;
-                                }
+                for (const url of urls) {
+                    try {
+                        const res = await fetch(url);
+                        if (res.ok) {
+                            const text = await res.text();
+                            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                klinesData = normalizeKlineData(JSON.parse(text));
+                                if (klinesData.length > 0) break;
                             }
-                        } catch(e) {}
+                        }
+                    } catch (fetchErr) {
+                        console.warn("Binance fetch fallback: ", fetchErr);
                     }
                 }
 
                 if (klinesData.length === 0) {
-                    throw new Error("No data received from Margex data sources");
+                    throw new Error("No data received from Binance API");
                 }
 
                 if (priceOffset !== 0) {
@@ -1564,8 +1481,6 @@
 
                 update5mOpenAndLines();
                 updateOscillatorData();
-
-
 
                 if (chartData.length > 0) {
                     const latest = chartData[chartData.length - 1];
@@ -1591,11 +1506,11 @@
                     });
                 }
 
-                connectMargexStream();
+                connectBinanceStream();
 
             } catch (err) {
-                console.error("Error fetching Margex data: ", err);
-                if (connectionText) connectionText.innerText = "Error cargando datos de Margex.";
+                console.error("Error fetching Binance data: ", err);
+                if (connectionText) connectionText.innerText = "Error cargando datos de Binance.";
                 if (connectionDot) {
                     connectionDot.style.backgroundColor = "var(--binance-red)";
                     connectionDot.style.boxShadow = "0 0 8px var(--binance-red)";
@@ -1603,7 +1518,7 @@
             }
         }
 
-        function connectMargexStream() {
+        function connectBinanceStream() {
             if (ws) {
                 try { ws.onclose = null; ws.close(); } catch(e) {}
                 ws = null;
@@ -1615,31 +1530,56 @@
 
             let wsAttempted = false;
             try {
-                ws = new WebSocket(`wss://api.margex.com/v1/ws`);
+                const interval = BINANCE_INTERVAL_MAP[currentInterval] || currentInterval;
+                ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=btcusdt@kline_${interval}/btcusdt@ticker`);
 
                 ws.onopen = () => {
                     wsAttempted = true;
-                    if (connectionText) connectionText.innerText = "Margex Live WS Activo";
+                    if (connectionText) connectionText.innerText = "Binance.com Live WS Activo";
                     if (connectionDot) {
                         connectionDot.style.backgroundColor = "var(--binance-green)";
                         connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
                     }
-
-                    const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
-                    ws.send(JSON.stringify({
-                        op: "subscribe",
-                        args: [`klines.${intervalParam}.BTCUSD`, `ticker.BTCUSD`]
-                    }));
                 };
 
                 ws.onmessage = (event) => {
                     try {
                         const msg = JSON.parse(event.data);
-                        if (msg.topic && msg.topic.includes('kline') && msg.data) {
-                            const kData = normalizeKlineData([msg.data])[0];
-                            if (kData) updateRealtimeKlineFromCandle(kData);
-                        } else if (msg.topic && msg.topic.includes('ticker') && msg.data) {
-                            updateHeaderStats(msg.data);
+                        const data = msg.data || msg;
+
+                        if (msg.stream && msg.stream.includes('@kline')) {
+                            const k = data.k;
+                            if (k) {
+                                let kData = {
+                                    time: Math.floor(k.t / 1000),
+                                    open: parseFloat(k.o),
+                                    high: parseFloat(k.h),
+                                    low: parseFloat(k.l),
+                                    close: parseFloat(k.c),
+                                    volume: parseFloat(k.v)
+                                };
+                                if (priceOffset !== 0) {
+                                    kData = {
+                                        ...kData,
+                                        open: kData.open + priceOffset,
+                                        high: kData.high + priceOffset,
+                                        low: kData.low + priceOffset,
+                                        close: kData.close + priceOffset
+                                    };
+                                }
+                                updateRealtimeKlineFromCandle(kData);
+                            }
+                        } else if (msg.stream && msg.stream.includes('@ticker')) {
+                            let tickData = data;
+                            if (priceOffset !== 0) {
+                                tickData = {
+                                    ...tickData,
+                                    c: parseFloat(data.c) + priceOffset,
+                                    h: parseFloat(data.h) + priceOffset,
+                                    l: parseFloat(data.l) + priceOffset
+                                };
+                            }
+                            updateHeaderStats(tickData);
                         }
                     } catch(e) {}
                 };
@@ -1649,12 +1589,12 @@
                     if (!wsAttempted) {
                         startPollingFallback();
                     } else {
-                        if (connectionText) connectionText.innerText = "Reconectando a Margex...";
+                        if (connectionText) connectionText.innerText = "Reconectando a Binance...";
                         if (connectionDot) {
                             connectionDot.style.backgroundColor = "var(--binance-yellow)";
                             connectionDot.style.boxShadow = "0 0 8px var(--binance-yellow)";
                         }
-                        setTimeout(connectMargexStream, 5000);
+                        setTimeout(connectBinanceStream, 5000);
                     }
                 };
             } catch (e) {
@@ -1663,7 +1603,7 @@
         }
 
         function startPollingFallback() {
-            if (connectionText) connectionText.innerText = "Margex Live (HTTP Polling)";
+            if (connectionText) connectionText.innerText = "Binance.com Live (HTTP Polling)";
             if (connectionDot) {
                 connectionDot.style.backgroundColor = "var(--binance-green)";
                 connectionDot.style.boxShadow = "0 0 8px var(--binance-green)";
@@ -1671,44 +1611,32 @@
 
             if (!pollingTimer) {
                 pollingTimer = setInterval(async () => {
-                    await pollMargexLatest();
+                    await pollBinanceLatest();
                 }, 3000);
             }
         }
 
-        async function pollMargexLatest() {
+        async function pollBinanceLatest() {
             try {
-                const intervalParam = MARGEX_INTERVAL_MAP[currentInterval] || currentInterval;
-                const bybitInterval = BYBIT_INTERVAL_MAP[currentInterval] || '1';
-                let candles = [];
-                try {
-                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=5`);
-                    if (res.ok) {
-                        const text = await res.text();
-                        if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-                            candles = normalizeKlineData(JSON.parse(text));
-                        }
-                    }
-                } catch(e) {}
+                const interval = BINANCE_INTERVAL_MAP[currentInterval] || currentInterval;
+                const urls = [
+                    `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=5`,
+                    `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${interval}&limit=5`,
+                    `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${BYBIT_INTERVAL_MAP[currentInterval] || '1'}&limit=5`
+                ];
 
-                if (candles.length === 0) {
-                    const fallbackUrls = [
-                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=${bybitInterval}&limit=5`,
-                        `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`,
-                        `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=5`
-                    ];
-                    for (const fbUrl of fallbackUrls) {
-                        try {
-                            const fbRes = await fetch(fbUrl);
-                            if (fbRes.ok) {
-                                const text = await fbRes.text();
-                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-                                    candles = normalizeKlineData(JSON.parse(text));
-                                    if (candles.length > 0) break;
-                                }
+                let candles = [];
+                for (const url of urls) {
+                    try {
+                        const res = await fetch(url);
+                        if (res.ok) {
+                            const text = await res.text();
+                            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                candles = normalizeKlineData(JSON.parse(text));
+                                if (candles.length > 0) break;
                             }
-                        } catch(e) {}
-                    }
+                        }
+                    } catch(e) {}
                 }
 
                 if (candles.length > 0) {
@@ -1750,9 +1678,6 @@
 
         let lastPrice = 0;
         let current5mOpenPrice = null;
-        let lineUpper200 = null;
-        let lineLower200 = null;
-        let lineCenter = null;
 
         function get5mOpenPrice(data) {
             if (!data || data.length === 0) return null;
@@ -1776,57 +1701,9 @@
 
         function update5mOpenAndLines() {
             if (!chartData || chartData.length === 0) return;
-            
             const new5mOpen = get5mOpenPrice(chartData);
-            if (!new5mOpen || isNaN(new5mOpen)) return;
-            current5mOpenPrice = new5mOpen;
-
-            const upperPrice = current5mOpenPrice + 200;
-            const lowerPrice = current5mOpenPrice - 200;
-            const centerPrice = current5mOpenPrice;
-
-            if (!lineUpper200) {
-                lineUpper200 = candleSeries.createPriceLine({
-                    price: upperPrice,
-                    color: '#00d2ff',
-                    lineWidth: 1.5,
-                    lineStyle: LightweightCharts.LineStyle.Dotted,
-                    axisLabelVisible: true,
-                    title: '+200',
-                });
-            } else {
-                lineUpper200.applyOptions({ price: upperPrice });
-            }
-
-            if (!lineCenter) {
-                lineCenter = candleSeries.createPriceLine({
-                    price: centerPrice,
-                    color: '#00d2ff',
-                    lineWidth: 1,
-                    lineStyle: LightweightCharts.LineStyle.Dotted,
-                    axisLabelVisible: false,
-                    title: '',
-                });
-            } else {
-                lineCenter.applyOptions({ price: centerPrice });
-            }
-
-            if (!lineLower200) {
-                lineLower200 = candleSeries.createPriceLine({
-                    price: lowerPrice,
-                    color: '#00d2ff',
-                    lineWidth: 1.5,
-                    lineStyle: LightweightCharts.LineStyle.Dotted,
-                    axisLabelVisible: true,
-                    title: '-200',
-                });
-            } else {
-                lineLower200.applyOptions({ price: lowerPrice });
-            }
-
-            if (chart) {
-                chart.priceScale('right').applyOptions({});
-                renderCanvasOverlay();
+            if (new5mOpen && !isNaN(new5mOpen)) {
+                current5mOpenPrice = new5mOpen;
             }
         }
 
@@ -2078,7 +1955,7 @@
                 ws = null;
             }
 
-            fetchMargexData();
+            fetchBinanceData();
         }
 
         document.querySelectorAll('.interval-btn').forEach(btn => {
@@ -2091,22 +1968,20 @@
         // Evaluate timeframe trend status
         async function evaluateTimeframeTrend(interval) {
             try {
-                const intervalParam = MARGEX_INTERVAL_MAP[interval] || interval;
                 let klines = [];
-                try {
-                    const res = await fetch(`https://api.margex.com/v1/market/klines?symbol=BTCUSD&interval=${intervalParam}&limit=50`);
-                    if (res.ok) {
-                        const json = await res.json();
-                        klines = normalizeKlineData(json);
-                    }
-                } catch(e) {}
-
-                if (klines.length === 0) {
-                    const fbRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=50`);
-                    if (fbRes.ok) {
-                        const json = await fbRes.json();
-                        klines = normalizeKlineData(json);
-                    }
+                const urls = [
+                    `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=50`,
+                    `https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${interval}&limit=50`
+                ];
+                for (const url of urls) {
+                    try {
+                        const res = await fetch(url);
+                        if (res.ok) {
+                            const json = await res.json();
+                            klines = normalizeKlineData(json);
+                            if (klines.length > 0) break;
+                        }
+                    } catch(e) {}
                 }
 
                 if (!Array.isArray(klines) || klines.length < 25) return 'consolidation';
@@ -2168,7 +2043,7 @@
             initChart();
             initOscillatorChart();
             initCanvas();
-            fetchMargexData();
+            fetchBinanceData();
             updateAllTimeframeTrends();
             setInterval(updateAllTimeframeTrends, 20000);
         });
